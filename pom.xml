@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.jboss</groupId>
+        <artifactId>jboss-parent</artifactId>
+        <version>50</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>org.wildfly.testing</groupId>
+    <artifactId>wildfly-testing-tools-parent</artifactId>
+    <version>1.0.0.Beta1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>WildFly Testing Tools</name>
+
+    <description>
+        A testing framework for testing WildFly
+    </description>
+
+    <modules>
+        <module>extension</module>
+    </modules>
+
+    <properties>
+        <!-- Override the release version -->
+        <maven.compiler.release>17</maven.compiler.release>
+
+        <!-- Project dependencies -->
+        <version.org.jboss.logging.jboss-logging>3.6.1.Final</version.org.jboss.logging.jboss-logging>
+        <version.org.kohsuke.metainf-services>1.11</version.org.kohsuke.metainf-services>
+        <version.org.wildfly.launcher>1.0.2.Final</version.org.wildfly.launcher>
+        <version.org.wildfly.plugin.tools>1.2.4.Final</version.org.wildfly.plugin.tools>
+        <!-- Used to override the provisioned version of WildFly. Defaults to empty which is the latest from the channel. -->
+        <version.org.wildfly/>
+
+        <!-- Test dependencies -->
+        <version.org.junit>6.0.0</version.org.junit>
+        <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
+
+        <!-- Plugin versions -->
+        <version.formatter.maven.plugin>2.29.0</version.formatter.maven.plugin>
+        <version.impsort.maven.plugin>1.12.0</version.impsort.maven.plugin>
+        <version.central.publishing.maven.plugin>0.9.0</version.central.publishing.maven.plugin>
+        <version.wildfly-maven-plugin>5.1.4.Final</version.wildfly-maven-plugin>
+
+        <!-- Provisioning properties -->
+        <galleon.fork.embedded>true</galleon.fork.embedded>
+        <server.test.feature.pack.groupId>org.wildfly</server.test.feature.pack.groupId>
+        <server.test.feature.pack.artifactId>wildfly-ee-galleon-pack</server.test.feature.pack.artifactId>
+
+        <wildfly.channel.manifest.groupId>org.wildfly.channels</wildfly.channel.manifest.groupId>
+        <wildfly.channel.manifest.artifactId>wildfly-ee</wildfly.channel.manifest.artifactId>
+        <wildfly.channel.manifest.version>${version.org.wildfly}</wildfly.channel.manifest.version>
+
+        <!-- checkstyle configuration -->
+        <linkXRef>false</linkXRef>
+
+        <wildfly.scm.connection>scm:git://github.com/wildfly/wildfly-testing-tools.git</wildfly.scm.connection>
+        <wildfly.scm.developer.connection>scm:git:git@github.com:wildfly/wildfly-testing-toolsn.git
+        </wildfly.scm.developer.connection>
+        <wildfly.scm.url>https://github.com/wildfly/wildfly-testing-tools</wildfly.scm.url>
+
+        <!-- Other properties -->
+        <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+
+        <jboss.home>${project.build.directory}${file.separator}wildfly</jboss.home>
+        <test.class.path>${project.build.testOutputDirectory}</test.class.path>
+        <test.jvm.args>-Dmaven.repo.local=${settings.localRepository}</test.jvm.args>
+
+        <!-- maven-release-plugin configuration -->
+        <autoVersionSubmodules>true</autoVersionSubmodules>
+        <releaseProfiles>release</releaseProfiles>
+        <signTag>true</signTag>
+        <tagNameFormat>v@{project.version}</tagNameFormat>
+        <arguments>-DskipTests</arguments>
+        <!-- Do not push changes by default when using the maven-release-plugin:prepare -->
+        <pushChanges>true</pushChanges>
+        <!-- Use the local directory when using perform -->
+        <localCheckout>true</localCheckout>
+        <!-- Maven Central properties -->
+        <repo.sonatype.url>https://central.sonatype.com</repo.sonatype.url>
+        <sonatype.server.id>central</sonatype.server.id>
+        <autoPublish>true</autoPublish>
+        <waitUntil>validated</waitUntil>
+    </properties>
+    <url>https://www.wildfly.org</url>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/wildfly/wildfly-testing-tools/issues</url>
+    </issueManagement>
+
+    <scm>
+        <connection>${wildfly.scm.connection}</connection>
+        <developerConnection>${wildfly.scm.developer.connection}</developerConnection>
+        <url>${wildfly.scm.url}</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>Apache License Version 2.0</name>
+            <url>https://repository.jboss.org/licenses/apache-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${version.org.junit}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.platform</groupId>
+                <artifactId>jakarta.jakartaee-bom</artifactId>
+                <version>10.0.0</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${version.org.jboss.logging.jboss-logging}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-bom</artifactId>
+                <version>6.2.14.Final</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.kohsuke.metainf-services</groupId>
+                <artifactId>metainf-services</artifactId>
+                <version>${version.org.kohsuke.metainf-services}</version>
+                <scope>provided</scope>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-plugin-tools</artifactId>
+                <version>${version.org.wildfly.plugin.tools}</version>
+            </dependency>
+            <!-- We want this last to hopefully not have it override other dependencies -->
+            <dependency>
+                <groupId>org.jboss.shrinkwrap</groupId>
+                <artifactId>shrinkwrap-depchain</artifactId>
+                <version>1.2.6</version>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.kohsuke.metainf-services</groupId>
+            <artifactId>metainf-services</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.kohsuke.metainf-services</groupId>
+                            <artifactId>metainf-services</artifactId>
+                            <version>${version.org.kohsuke.metainf-services}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <!-- Enable auto-formatting of source files -->
+            <plugin>
+                <groupId>net.revelc.code.formatter</groupId>
+                <artifactId>formatter-maven-plugin</artifactId>
+                <version>${version.formatter.maven.plugin}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.wildfly.tools</groupId>
+                        <artifactId>ide-config</artifactId>
+                        <version>1.0.5.Final</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <!-- store outside of target to speed up formatting when mvn clean is used -->
+                    <cachedir>.cache</cachedir>
+                    <configFile>eclipse-code-formatter.xml</configFile>
+                    <configXmlFile>wildfly-xml.properties</configXmlFile>
+                    <lineEnding>LF</lineEnding>
+                    <includeResources>true</includeResources>
+                    <removeTrailingWhitespace>true</removeTrailingWhitespace>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>format</id>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>net.revelc.code</groupId>
+                <artifactId>impsort-maven-plugin</artifactId>
+                <version>${version.impsort.maven.plugin}</version>
+                <configuration>
+                    <!-- store outside of target to speed up formatting when mvn clean is used -->
+                    <cachedir>.cache</cachedir>
+                    <groups>java.,javax.,jakarta.,org.,com.</groups>
+                    <staticGroups>*</staticGroups>
+                    <removeUnused>true</removeUnused>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>sort-imports</id>
+                        <goals>
+                            <goal>sort</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>${version.wildfly-maven-plugin}</version>
+                <configuration>
+                    <provisioning-dir>${jboss.home}</provisioning-dir>
+                    <feature-packs>
+                        <feature-pack>
+                            <groupId>${server.test.feature.pack.groupId}</groupId>
+                            <artifactId>${server.test.feature.pack.artifactId}</artifactId>
+                            <version>${version.org.wildfly}</version>
+                        </feature-pack>
+                    </feature-packs>
+                    <channels>
+                        <!-- If the server.version is blank the newest version of WildFly will be used.
+                             Otherwise, be explicit.
+                         -->
+                        <channel>
+                            <manifest>
+                                <groupId>${wildfly.channel.manifest.groupId}</groupId>
+                                <artifactId>${wildfly.channel.manifest.artifactId}</artifactId>
+                                <version>${wildfly.channel.manifest.version}</version>
+                            </manifest>
+                        </channel>
+                    </channels>
+                    <galleon-options>
+                        <jboss-maven-dist/>
+                        <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                    </galleon-options>
+                </configuration>
+            </plugin>
+            <!-- We need to bind a new execution of this to run after provisioning is done so the module.xml file
+                 required for testing is not deleted.
+            -->
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-module</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>testResources</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>format-check</id>
+            <build>
+                <plugins>
+                    <!-- Validate formatting -->
+                    <plugin>
+                        <groupId>net.revelc.code.formatter</groupId>
+                        <artifactId>formatter-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>validate-format</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>validate</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>net.revelc.code</groupId>
+                        <artifactId>impsort-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>check-import-sort</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>release</id>
+            <activation>
+                <property>
+                    <name>release</name>
+                </property>
+            </activation>
+
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>${sonatype.server.id}</id>
+                    <url>${repo.sonatype.url}</url>
+                </snapshotRepository>
+                <repository>
+                    <id>${sonatype.server.id}</id>
+                    <url>${repo.sonatype.url}</url>
+                </repository>
+            </distributionManagement>
+
+            <build>
+                <plugins>
+                    <!-- Semantically ordered -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <configuration>
+                            <rules>
+                                <requireReleaseDeps>
+                                    <message>No Snapshots Allowed!</message>
+                                </requireReleaseDeps>
+                            </rules>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${version.central.publishing.maven.plugin}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>${sonatype.server.id}</publishingServerId>
+                            <autoPublish>${autoPublish}</autoPublish>
+                            <waitUntil>${waitUntil}</waitUntil>
+                            <deploymentName>${project.groupId}-${project.artifactId}-${project.version}</deploymentName>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+    <!-- required when provisioning the server for tests, using Galleon plugin to be removed when WF doesn't require them -->
+    <repositories>
+        <repository>
+            <id>nexus</id>
+            <url>https://repository.jboss.org/nexus/content/groups/public</url>
+        </repository>
+    </repositories>
+</project>

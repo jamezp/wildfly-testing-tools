@@ -1,0 +1,192 @@
+= WildFly JUnit Utilities
+
+This JUnit Extension manages the lifecycle of a WildFly based server. It starts a server and keeps it running until all
+tests have completed.
+
+You can optionally deploy test applications per-test to the server. Only one deployment can be defined per-test.
+
+== Annotations
+
+=== `@WildFlyTest`
+
+Any test requiring a server to be started must use this annotation. The configuration options can also be overridden
+via the command line.
+
+=== `@DeploymentProducer`
+
+This annotation can be placed on a static method which is meant to create a deployment for the server. Only one
+deployment producer can be defined per test.
+
+=== `@Domain`
+
+Indicates the test should start a domain server. If there is a deployment for the test, at least one server group must
+be defined in the `@Domain` annotation.
+
+NOTE: The `@Domain` annotation automatically adds a `domain-test` tag, `@Tag("domain-test")`. This allows for easier
+filtering of tests as you cannot mix domain and standalone tests in the same execution.
+
+[source,java]
+----
+@WildFlyTest
+@Domain("main-server-group")
+class DomainTest {
+
+    @DeploymentProducer
+    public static WebArchive deployment() {
+        return ShrinkWrap.create(WebArchive.class)
+                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    @ServerResource
+    @DomainServer("server-one")
+    private URI uri;
+
+    @Test
+    void checkConnection() {
+
+    }
+}
+----
+
+=== `@ServerResource`
+
+This annotation can be used on method parameters or fields to inject various resources. The following resources can be
+injected.
+
+|===
+|Type |Description
+
+|`org.wildfly.plugin.tools.server.ServerManager`
+|The server manager used to manage the lifecycle of the server. You will not be able to stop the server, but you can
+perform other management tasks.
+
+|`java.net.URI`
+|This is an HTTP based URI. If a deployment is present, the URI will include the context path for the deployment.
+
+|===
+
+
+=== `@RequiresModule`
+
+The `@RequiresModule` annotation can be used on a class or test method and will disable a test if the required module
+is not found. There is also an option to define minimum version of a module required for the test to be enabled.
+
+.Example
+[source,java]
+----
+@WildFlyTest
+@RequiresModule("org.jboss.as.ejb3")
+public class Ejb3Test {
+
+    @Test
+    @RequiresModule(value = "org.jboss.as.ejb3", minVersion = "32.0.0.Beta1",
+        issueRef = "https://issues.redhat.com/browse/WFLY-1", reason = "This test only works on WildFly 32 or higher")
+    public void ejbNewFeature() {
+
+    }
+}
+----
+
+The `minVersion`, `issueRef` and `reason` are all optional. The `value`, which is the module name, is required. The
+`issueRef` and `reason` are used for the reason text when the test is disabled.
+
+This is a repeatable annotation. When more than one `@RequiresModule` is found, all conditions must be met for a test
+to be enabled. If you want only one condition to be met, use the `@AnyOf` annotation.
+
+=== `@AnyOf`
+
+The `@AnyOf` annotation is used to define one or more `@RequiresModule` annotations and only one of the conditions needs
+to be met to enable a test.
+
+.Example
+[source,java]
+----
+@WildFlyTest
+@ApplicationScoped
+public class RestTest {
+
+    @Test
+    @AnyOf({
+        @RequiresModule("org.jboss.resteasy.resteasy-client"),
+        @RequiresModule("org.jboss.resteasy.resteasy-vertx-client")
+    })
+    public void simpleResource() {
+
+    }
+}
+----
+
+The above test will execute if either the `org.jboss.resteasy.resteasy-client` or `org.jboss.resteasy.resteasy-vertx-client`
+exist.
+
+=== `@JBossHome`
+
+The `@JBossHome` annotation is a simple helper annotation for injecting a `java.lang.String`, `java.nio.file.Path` or
+`java.io.File` parameter with the JBoss Home directory. First the `jboss.home` system property is checked. If not found,
+the `JBOSS_HOME` environment variable is checked. Finally, the `jboss.home.dir` is checked. If neither are set a
+`org.junit.jupiter.api.extension.ParameterResolutionException` is thrown.
+
+== Configuration Properties
+
+Configuration properties can be defined as system properties or in the
+https://docs.junit.org/current/user-guide/#running-tests-config-params[JUnit configuration options].
+
+|===
+|Property |Description |Default Value
+
+|`jboss.home`
+|This is a requirement parameter. If the system property or configuration property is not found, the `JBOSS_HOME`
+environment variable is checked. If that is not found, the configuration property `jboss.home.dir` is checked.
+|
+
+|`wildfly.java.home`
+|Set this to a different Java Runtime Environment if you do not want to use the current JVM.
+|The current `java.home` value.
+
+|`wildfly.module.path`
+|An alternate module path for JBoss Modules.
+|`${jboss.home}/modules`
+
+|`wildfly.timeout`
+|The timeout, in seconds, used for starting and shutting down the server. If the server does not start or shutdown
+within this time, an exception is thrown.
+| 60
+
+|`wildfly.http.protocol`
+|The protocol used for creating an HTTP connection.
+| http
+
+|`wildfly.http.host`
+|The host used for the creating an HTTP connection
+|localhost
+
+|`wildfly.http.port`
+|The port used for the creating an HTTP connection
+|8080
+
+|===
+
+== Extending
+
+You can extend the resource injection via the `@ServerResource` annotation by implementing a
+`org.wildfly.testing.junit.api.ServerResourceProducer`.
+
+[source,java]
+----
+@MetaInfServices
+public class RestClientProducer implements ServerResourceProducer {
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create("Rest.Client");
+
+    @Override
+    public boolean canInject(final ExtensionContext context, final Class<?> clazz, final Annotation... annotations) {
+        return Client.class.isAssignableFrom(clazz);
+    }
+
+    @Override
+    public Object produce(final ExtensionContext context, final Class<?> clazz, final Annotation... annotations)
+            throws IllegalArgumentException {
+        final ExtensionContext.Store store = context.getStore(ExtensionContext.StoreScope.LAUNCHER_SESSION, NAMESPACE);
+        return store.computeIfAbsent("rest-client", (c) -> ClientBuilder.newClient(), Client.class);
+    }
+}
+----
