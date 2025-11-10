@@ -48,6 +48,79 @@ class DomainTest {
 }
 ----
 
+=== `@ManualMode`
+
+This annotation can be used to indicate a test can manage the lifecycle of a server. If the value on the annotation is
+not set or set to `false`, the server will not be started once the test starts. The test is responsible for starting
+and stopping the server.
+
+[source,java]
+----
+@WildFlyTest
+@ManualMode
+class ManualModeTest {
+
+    @DeploymentProducer
+    public static WebArchive deployment() {
+        return ShrinkWrap.create(WebArchive.class)
+                .addClasses(TestServlet.class)
+                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    @ServerResource
+    private ServerManager serverManager;
+
+    @Test
+    void checkServer() {
+        serverManager.start();
+        Assertions.assertTrue(serverManager.isRunning(), () -> String.format("Server %s should be running, but is not.", serverManager));
+        serverManager.shudown();
+    }
+}
+----
+
+You can set the value of the `true` to have the server auto-start.
+
+[source,java]
+----
+@WildFlyTest
+@ManualMode(true)
+class ManualModeTest {
+
+    @DeploymentProducer
+    public static WebArchive deployment() {
+        return ShrinkWrap.create(WebArchive.class)
+                .addClasses(TestServlet.class)
+                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    @ServerResource
+    private static ServerManager serverManager;
+    private static String restorePath;
+
+    @BeforeAll
+    static void snapshot() throws Exception {
+        restorePath = serverManager.takeSnapshot();
+    }
+
+    @AfterAll
+    public static void restore() throws Exception {
+        if (restorePath != null) {
+            final ModelNode op = Operations.createOperation("reload");
+            op.get("server-config").set(restorePath);
+            serverManager.executeReload(op);
+            serverManager.waitFor(30L, TimeUnit.SECONDS);
+            serverManager.executeOperation(Operations.createOperation("write-config"));
+        }
+    }
+
+    @Test
+    void checkServer() {
+        Assertions.assertTrue(serverManager.isRunning(), () -> String.format("Server %s should be running, but is not.", serverManager));
+    }
+}
+----
+
 === `@ServerResource`
 
 This annotation can be used on method parameters or fields to inject various resources. The following resources can be
