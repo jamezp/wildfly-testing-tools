@@ -25,12 +25,12 @@ import org.junit.platform.commons.support.HierarchyTraversalMode;
 import org.wildfly.plugin.tools.Deployment;
 import org.wildfly.plugin.tools.DeploymentResult;
 import org.wildfly.plugin.tools.UndeployDescription;
-import org.wildfly.plugin.tools.server.DomainConfiguration;
+import org.wildfly.plugin.tools.server.Configuration;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.plugin.tools.server.ServerManagerException;
-import org.wildfly.plugin.tools.server.StandaloneConfiguration;
+import org.wildfly.plugin.tools.server.ServerManagerListener;
 import org.wildfly.testing.junit.annotations.DeploymentProducer;
 import org.wildfly.testing.junit.annotations.Domain;
+import org.wildfly.testing.junit.annotations.ManualMode;
 import org.wildfly.testing.junit.api.DomainConfigurationFactory;
 import org.wildfly.testing.junit.api.ServerConfiguration;
 import org.wildfly.testing.junit.api.StandaloneConfigurationFactory;
@@ -51,56 +51,61 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
     private static final Logger LOGGER = Logger.getLogger(WildFlyExtension.class);
 
     private static final String SERVER_KEY = "wildfly.server";
+    private static final String SERVER_LISTENER_KEY = "wildfly.server.listener";
     private static final ExtensionContext.Namespace SERVER_NAMESPACE = ExtensionContext.Namespace
             .create("WildFly.Server");
 
     @Override
-    public void beforeAll(final ExtensionContext context) {
+    public void beforeAll(final ExtensionContext context) throws Exception {
         // Start server (if not already started) - shared across all test classes
-        final ServerManager serverManager = getOrStartServer(context);
+        final ServerManager serverManager = getOrCreateServerManager(context);
 
-        // Check if deployment already exists in cache (shouldn't happen, but be defensive)
-        if (DeploymentContext.resolveDeployment(context).isPresent()) {
-            return; // Already deployed
+        final Optional<ManualMode> manualMode = TestSupport.getManualMode(context);
+
+        if (manualMode.isEmpty()) {
+            if (!serverManager.isRunning()) {
+                // Get timeout from configuration (defaults to 60 seconds)
+                final long timeout = ServerConfiguration.timeout(context);
+                // Start the server
+                serverManager.start(timeout, TimeUnit.SECONDS);
+            }
+            // Deploy any deployments and cache the deployment information
+            deploy(serverManager, context);
+        } else {
+            final var autoStart = manualMode.get().value();
+            if (autoStart) {
+                if (!serverManager.isRunning()) {
+                    // Get timeout from configuration (defaults to 60 seconds)
+                    final long timeout = ServerConfiguration.timeout(context);
+                    // Start the server
+                    serverManager.start(timeout, TimeUnit.SECONDS);
+                }
+                deploy(serverManager, context);
+            } else {
+                if (serverManager.isRunning()) {
+                    LOGGER.debugf("Shutting down server for manual mode test %s", context.getRequiredTestClass().getName());
+                    stopServer(context, serverManager);
+                }
+                final var listener = new ExtensionServerManagerListener(context, serverManager);
+                getClassStore(context).put(SERVER_LISTENER_KEY, listener);
+                serverManager.addServerManagerListener(listener);
+            }
         }
-
-        // Deploy any deployments and cache the deployment information
-        deploy(serverManager, context);
     }
 
     @Override
     public void afterAll(final ExtensionContext context) {
-        // Get deployment info
-        final Optional<DeploymentInfo> deploymentInfo = DeploymentContext.resolveDeployment(context);
-        if (deploymentInfo.isEmpty()) {
-            return;
-        }
         final Optional<ServerManager> opt = getServer(context);
         if (opt.isEmpty()) {
             return;
         }
         final ServerManager serverManager = opt.get();
-        // Check for @Domain annotation
-        final Optional<Domain> domain = AnnotationSupport
-                .findAnnotation(context.getRequiredTestClass(), Domain.class);
-        final String deploymentName = deploymentInfo.get().deploymentName();
-        final UndeployDescription undeployDescription = UndeployDescription.of(deploymentName);
-        if (domain.isPresent()) {
-            undeployDescription.addServerGroups(deploymentInfo.get().serverGroup());
+        // Get deployment info
+        final Optional<DeploymentInfo> deploymentInfo = DeploymentContext.resolveDeployment(context);
+        if (deploymentInfo.isEmpty()) {
+            return;
         }
-        // Undeploy from server
-        try {
-            final DeploymentResult result = serverManager.deploymentManager()
-                    .undeploy(undeployDescription);
-            if (!result.successful()) {
-                LOGGER.warnf("Failed to undeploy application %s: %s", deploymentName, result.getFailureMessage());
-            }
-        } catch (Exception e) {
-            LOGGER.warnf(e, "Failed to undeploy application %s.", deploymentName);
-        }
-
-        // Remove from cache
-        DeploymentContext.remove(context);
+        undeploy(context, serverManager, deploymentInfo.get());
     }
 
     /**
@@ -112,13 +117,12 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
      * @return the server manager
      */
     @SuppressWarnings("resource")
-    private ServerManager getOrStartServer(final ExtensionContext context) {
-        final ExtensionContext.Store store = getStore(context);
+    private ServerManager getOrCreateServerManager(final ExtensionContext context) {
+        final ExtensionContext.Store store = getGlobalStore(context);
 
         return store.computeIfAbsent(SERVER_KEY, key -> {
             // Start the server
-            final ServerManager serverManager = startServer(context);
-
+            final ServerManager serverManager = createServer(context);
             // Return a CloseableResource that stops server on cleanup
             return new ServerResource(serverManager, context);
         }, ServerResource.class).get();
@@ -133,51 +137,25 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
      * @return the server manager, or empty if not started
      */
     static Optional<ServerManager> getServer(final ExtensionContext context) {
-        final ExtensionContext.Store store = getStore(context);
+        final ExtensionContext.Store store = getGlobalStore(context);
         final ServerResource resource = store.get(SERVER_KEY, ServerResource.class);
         return Optional.ofNullable(resource).map(ServerResource::get);
     }
 
-    /**
-     * Starts the WildFly server and waits for it to be ready.
-     *
-     * @param context the extension context
-     *
-     * @return the started server manager
-     */
-    private ServerManager startServer(final ExtensionContext context) {
-        try {
-            // Check for @Domain annotation
-            final Optional<Domain> domain = AnnotationSupport
-                    .findAnnotation(context.getRequiredTestClass(), Domain.class);
-            // Determine configuration based on launch type
-            final ServerManager serverManager;
-            if (domain.isPresent()) {
-                final DomainConfiguration configuration = DomainConfigurationFactory.create()
-                        .configuration(context);
-                serverManager = ServerManager.start(configuration);
-            } else {
-                final StandaloneConfiguration configuration = StandaloneConfigurationFactory.create()
-                        .configuration(context);
-                serverManager = ServerManager.start(configuration);
-            }
-
-            // Get timeout from configuration (defaults to 60 seconds)
-            final long timeout = ServerConfiguration.timeout(context);
-
-            // Wait for server to start
-            if (!serverManager.waitFor(timeout, TimeUnit.SECONDS)) {
-                serverManager.kill();
-                throw new AssertionError("WildFly server did not start within " + timeout + " seconds");
-            }
-
-            return serverManager;
-        } catch (ServerManagerException | InterruptedException e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
-            throw new JUnitException("Failed to start WildFly server", e);
+    private ServerManager createServer(final ExtensionContext context) {
+        // Check for @Domain annotation
+        final Optional<Domain> domain = AnnotationSupport
+                .findAnnotation(context.getRequiredTestClass(), Domain.class);
+        // Determine configuration based on launch type
+        final Configuration<?> configuration;
+        if (domain.isPresent()) {
+            configuration = DomainConfigurationFactory.create()
+                    .configuration(context);
+        } else {
+            configuration = StandaloneConfigurationFactory.create()
+                    .configuration(context);
         }
+        return ServerManager.of(configuration);
     }
 
     /**
@@ -207,6 +185,10 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
      * @throws JUnitException if deployment fails
      */
     private void deploy(final ServerManager serverManager, final ExtensionContext context) {
+        // Check if deployment already exists in cache (shouldn't happen, but be defensive)
+        if (DeploymentContext.resolveDeployment(context).isPresent()) {
+            return; // Already deployed
+        }
 
         // Find deployment method for this test class
         final Optional<Method> deploymentMethod = resolveDeploymentMethod(context);
@@ -262,8 +244,44 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
         }
     }
 
-    private static ExtensionContext.Store getStore(final ExtensionContext context) {
+    private void undeploy(final ExtensionContext context, final ServerManager serverManager,
+            final DeploymentInfo deploymentInfo) {
+        // Check for @Domain annotation
+        final Optional<Domain> domain = AnnotationSupport
+                .findAnnotation(context.getRequiredTestClass(), Domain.class);
+        final String deploymentName = deploymentInfo.deploymentName();
+        final UndeployDescription undeployDescription = UndeployDescription.of(deploymentName);
+        if (domain.isPresent()) {
+            undeployDescription.addServerGroups(deploymentInfo.serverGroup());
+        }
+        // Undeploy from server
+        try {
+            final DeploymentResult result = serverManager.deploymentManager()
+                    .undeploy(undeployDescription);
+            if (!result.successful()) {
+                LOGGER.warnf("Failed to undeploy application %s: %s", deploymentName, result.getFailureMessage());
+            }
+        } catch (Exception e) {
+            LOGGER.warnf(e, "Failed to undeploy application %s.", deploymentName);
+        }
+
+        // Remove from cache
+        DeploymentContext.remove(context);
+    }
+
+    private static ExtensionContext.Store getGlobalStore(final ExtensionContext context) {
         return context.getRoot().getStore(ExtensionContext.StoreScope.LAUNCHER_SESSION, SERVER_NAMESPACE);
+    }
+
+    private static ExtensionContext.Store getClassStore(final ExtensionContext context) {
+        // We want to store on the class context, attempt to determine which that context
+        final ExtensionContext usingContext;
+        if (context.getTestMethod().isPresent()) {
+            usingContext = context.getParent().orElse(context);
+        } else {
+            usingContext = context;
+        }
+        return usingContext.getStore(SERVER_NAMESPACE);
     }
 
     private static Optional<Method> resolveDeploymentMethod(final ExtensionContext context) {
@@ -295,6 +313,7 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
                             Archive.class.getName(),
                             deploymentMethod.getReturnType().getName()));
         }
+        deploymentMethod.trySetAccessible();
         return Optional.of(deploymentMethod);
     }
 
@@ -317,6 +336,38 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
         @Override
         public void close() {
             stopServer(context, serverManager);
+        }
+    }
+
+    private class ExtensionServerManagerListener implements ServerManagerListener, AutoCloseable {
+        private final ExtensionContext context;
+        private final ServerManager serverManager;
+
+        private ExtensionServerManagerListener(final ExtensionContext context, final ServerManager serverManager) {
+            this.context = context;
+            this.serverManager = serverManager;
+        }
+
+        @Override
+        public void afterStart(final ServerManager serverManager) {
+            // Deploy any deployments and cache the deployment information
+            deploy(serverManager, context);
+        }
+
+        @Override
+        public void beforeShutdown(final ServerManager serverManager) {
+            // Get deployment info
+            final Optional<DeploymentInfo> deploymentInfo = DeploymentContext.resolveDeployment(context);
+            if (deploymentInfo.isEmpty()) {
+                return;
+            }
+            undeploy(context, serverManager, deploymentInfo.get());
+        }
+
+        @Override
+        public void close() {
+            getClassStore(context).remove(SERVER_LISTENER_KEY, ServerManagerListener.class);
+            serverManager.removeServerManagerListener(this);
         }
     }
 }

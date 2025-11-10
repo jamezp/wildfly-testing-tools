@@ -35,7 +35,7 @@ public class ServerManagerProducer implements ServerResourceProducer {
 
         // Get the server from WildFlyExtension and return as managed which will not allow shutting down the server
         return WildFlyExtension.getServer(context)
-                .map(ServerManager::asManaged)
+                .map(serverManager -> (TestSupport.isManualMode(context) ? serverManager : serverManager.asManaged()))
                 .orElse(null);
     }
 }
