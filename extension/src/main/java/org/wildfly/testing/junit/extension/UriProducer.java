@@ -8,6 +8,8 @@ package org.wildfly.testing.junit.extension;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.URI;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -59,12 +61,12 @@ public class UriProducer implements ServerResourceProducer {
             supplier = () -> URI.create(ServerConfiguration.resolveBaseUri(context));
         } else {
             // Create the supplier for cases when we have not yet resolved the URI
-            final DomainServer serverGroup = findQualifier(DomainServer.class, annotations);
-            if (serverGroup == null) {
+            final DomainServer domainServer = findQualifier(DomainServer.class, annotations);
+            if (domainServer == null) {
                 supplier = () -> resolveDeploymentUri(context, server, deploymentInfo.get().deploymentName());
             } else {
                 supplier = () -> resolveDeploymentUri(context, server, deploymentInfo.get()
-                        .deploymentName(), serverGroup.value());
+                        .deploymentName(), domainServer.value());
             }
         }
 
@@ -137,9 +139,7 @@ public class UriProducer implements ServerResourceProducer {
         String baseUri = ServerConfiguration.resolveBaseUri(context);
 
         // Try to get the context-root from Undertow subsystem
-        final ModelNode address = Operations.createAddress(
-                "deployment", deploymentName,
-                "subsystem", "undertow");
+        final ModelNode address = resolveAddress(serverManager, null, deploymentName);
 
         try {
             final ModelNode result = serverManager.client()
@@ -162,15 +162,12 @@ public class UriProducer implements ServerResourceProducer {
     private URI resolveDeploymentUri(final ExtensionContext context, final ServerManager serverManager,
             final String deploymentName,
             final String domainServer) {
-        if (serverManager instanceof DomainManager domainManager) {
+        if (serverManager instanceof DomainManager) {
             String baseUri = ServerConfiguration.resolveBaseUri(context);
 
             try {
                 // Try to get the context-root from Undertow subsystem
-                final ModelNode address = domainManager.determineHostAddress()
-                        .add("server", domainServer)
-                        .add("deployment", deploymentName)
-                        .add("subsystem", "undertow");
+                final ModelNode address = resolveAddress(serverManager, domainServer, deploymentName);
                 final ModelNode result = serverManager.client()
                         .execute(Operations.createReadAttributeOperation(address, "context-root"));
 
@@ -187,5 +184,40 @@ public class UriProducer implements ServerResourceProducer {
             return URI.create(baseUri);
         }
         throw new JUnitException(String.format("ServerManager %s is not a DomainManager", serverManager));
+    }
+
+    private static ModelNode resolveAddress(final ServerManager serverManager, final String domainServer,
+            final String deploymentName) {
+        try {
+            final ModelNode address;
+            if (domainServer != null && serverManager instanceof DomainManager domainManager) {
+                address = domainManager.determineHostAddress()
+                        .add("server", domainServer)
+                        .add("deployment", deploymentName);
+            } else {
+                address = Operations.createAddress("deployment", deploymentName);
+            }
+            // Let's attempt to find the WAR
+            if (deploymentName.toLowerCase(Locale.ROOT).endsWith(".ear")) {
+                final ModelNode op = Operations.createOperation("read-children-names", address);
+                op.get("child-type").set("subdeployment");
+                final ModelNode result = serverManager.client().execute(op);
+                if (Operations.isSuccessfulOutcome(result)) {
+                    final List<String> subdeployments = Operations.readResult(result).asList().stream()
+                            .map(ModelNode::asString)
+                            .toList();
+                    for (String subdeployment : subdeployments) {
+                        // Just use the first WAR
+                        if (subdeployment.toLowerCase(Locale.ROOT).endsWith(".war")) {
+                            address.add("subdeployment", subdeployment);
+                            break;
+                        }
+                    }
+                }
+            }
+            return address.add("subsystem", "undertow");
+        } catch (IOException ignore) {
+        }
+        return Operations.createAddress("deployment", deploymentName, "subsystem", "undertow");
     }
 }
