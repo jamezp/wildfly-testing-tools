@@ -16,13 +16,12 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.annotations.DeploymentProducer;
+import org.wildfly.testing.junit.annotations.GenerateDeployment;
 import org.wildfly.testing.junit.annotations.ManualMode;
 import org.wildfly.testing.junit.annotations.ServerResource;
 import org.wildfly.testing.junit.annotations.WildFlyTest;
@@ -35,10 +34,9 @@ import org.wildfly.testing.junit.annotations.WildFlyTest;
 @ManualMode(true)
 abstract class AbstractAutoStartBeforeEach implements ManualModeTest {
 
-    @DeploymentProducer
-    public static WebArchive createDeployment() {
-        return ShrinkWrap.create(WebArchive.class)
-                .addClasses(TestServlet.class);
+    @GenerateDeployment
+    public static void createDeployment(final WebArchive war) {
+        war.addClasses(TestServlet.class);
     }
 
     @ServerResource

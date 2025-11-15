@@ -1,4 +1,4 @@
-= WildFly JUnit Utilities
+.= WildFly JUnit Utilities
 
 This JUnit Extension manages the lifecycle of a WildFly based server. It starts a server and keeps it running until all
 tests have completed.
@@ -12,10 +12,40 @@ You can optionally deploy test applications per-test to the server. Only one dep
 Any test requiring a server to be started must use this annotation. The configuration options can also be overridden
 via the command line.
 
+=== `@GenerateDeployment`
+
+This annotation can be placed on a static method which would create a deployment and process it. The first parameter
+of the method must be a `org.jboss.shrinkwrap.api.Archive` or subtype. You can have an optional second parameter which
+is of type `org.junit.jupiter.api.TestInfo`.
+
+[source,java]
+----
+@GenerateDeployment
+public static void generate(final WebArchive war) {
+    war.addClasses(TestServlet.class, RestResource.class, RestActivator.class)
+                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+}
+----
+
+IMPORTANT: A test can have either a `@GenerateDeployment` method or a `@DeploymentProcducer` method, but not both or
+an error will occur.
+
 === `@DeploymentProducer`
 
 This annotation can be placed on a static method which is meant to create a deployment for the server. Only one
-deployment producer can be defined per test.
+deployment producer can be defined per test. The method can have an optional parameter of type `org.junit.jupiter.api.TestInfo`.
+
+[source,java]
+----
+@DeploymentProducer
+public static WebArchive deployment(final TestInfo testInfo) {
+    return ShrinkWrap.create(WebArchive.class, testInfo.getTestClass().orElse("test") + ".war")
+            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+}
+----
+
+IMPORTANT: A test can have either a `@DeploymentProcducer` method or a `@GenerateDeployment` method, but not both or
+an error will occur.
 
 === `@Domain`
 

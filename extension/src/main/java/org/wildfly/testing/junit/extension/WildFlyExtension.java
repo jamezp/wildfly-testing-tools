@@ -6,9 +6,6 @@
 package org.wildfly.testing.junit.extension;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -21,14 +18,12 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.JUnitException;
 import org.junit.platform.commons.support.AnnotationSupport;
-import org.junit.platform.commons.support.HierarchyTraversalMode;
 import org.wildfly.plugin.tools.Deployment;
 import org.wildfly.plugin.tools.DeploymentResult;
 import org.wildfly.plugin.tools.UndeployDescription;
 import org.wildfly.plugin.tools.server.Configuration;
 import org.wildfly.plugin.tools.server.ServerManager;
 import org.wildfly.plugin.tools.server.ServerManagerListener;
-import org.wildfly.testing.junit.annotations.DeploymentProducer;
 import org.wildfly.testing.junit.annotations.Domain;
 import org.wildfly.testing.junit.annotations.ManualMode;
 import org.wildfly.testing.junit.api.DomainConfigurationFactory;
@@ -83,7 +78,8 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
                 deploy(serverManager, context);
             } else {
                 if (serverManager.isRunning()) {
-                    LOGGER.debugf("Shutting down server for manual mode test %s", context.getRequiredTestClass().getName());
+                    LOGGER.debugf("Shutting down server for manual mode test %s", context.getRequiredTestClass()
+                            .getName());
                     stopServer(context, serverManager);
                 }
                 final var listener = new ExtensionServerManagerListener(context, serverManager);
@@ -191,26 +187,14 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
         }
 
         // Find deployment method for this test class
-        final Optional<Method> deploymentMethod = resolveDeploymentMethod(context);
+        final Optional<Archive<?>> deploymentArchive = resolveDeployment(context);
 
-        if (deploymentMethod.isEmpty()) {
+        if (deploymentArchive.isEmpty()) {
             return; // No deployment for this test
         }
 
-        final Method method = deploymentMethod.get();
-
         // Invoke deployment method to get Archive
-        final Archive<?> archive;
-        try {
-            if (Modifier.isStatic(method.getModifiers())) {
-                archive = (Archive<?>) method.invoke(null);
-            } else {
-                throw new JUnitException(String.format("Deployment method %s is required to be static for test %s", method,
-                        context.getTestClass().orElse(null)));
-            }
-        } catch (Exception e) {
-            throw new JUnitException("Failed to create deployment from method " + method, e);
-        }
+        final Archive<?> archive = deploymentArchive.get();
         final String deploymentName = archive.getName();
         // Check for @Domain annotation
         final Optional<Domain> domain = AnnotationSupport.findAnnotation(context.getRequiredTestClass(), Domain.class);
@@ -284,37 +268,19 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
         return usingContext.getStore(SERVER_NAMESPACE);
     }
 
-    private static Optional<Method> resolveDeploymentMethod(final ExtensionContext context) {
+    private static Optional<Archive<?>> resolveDeployment(final ExtensionContext context) {
         final Class<?> testClass = context.getRequiredTestClass();
-        final List<Method> deploymentMethods = AnnotationSupport.findAnnotatedMethods(
-                testClass,
-                DeploymentProducer.class,
-                HierarchyTraversalMode.TOP_DOWN);
-
-        // No deployment method found
-        if (deploymentMethods.isEmpty()) {
-            return Optional.empty();
-        }
-
-        // Validate: only one deployment method allowed per test class
-        if (deploymentMethods.size() > 1) {
+        final Optional<Archive<?>> testDeployment = TestSupport.findDeploymentMethod(context);
+        final Optional<Archive<?>> deploymentProducer = TestSupport.findDeploymentProducerMethod(context);
+        if (testDeployment.isPresent() && deploymentProducer.isPresent()) {
             throw new JUnitException(
-                    String.format("Only one @DeploymentProducer method is allowed per test class. Found %d in %s",
-                            deploymentMethods.size(), testClass.getName()));
+                    String.format("Test %s cannot have both @GenerateDeployment and @DeploymentProducer methods. " +
+                            "Use only one deployment method type per test class.", testClass.getName()));
         }
-        final Method deploymentMethod = deploymentMethods.get(0);
-
-        // Validate: return type must be Archive
-        if (!Archive.class.isAssignableFrom(deploymentMethod.getReturnType())) {
-            throw new JUnitException(
-                    String.format("@DeploymentProducer method %s.%s() must return %s, but returns %s",
-                            testClass.getName(),
-                            deploymentMethod.getName(),
-                            Archive.class.getName(),
-                            deploymentMethod.getReturnType().getName()));
+        if (testDeployment.isPresent()) {
+            return testDeployment;
         }
-        deploymentMethod.trySetAccessible();
-        return Optional.of(deploymentMethod);
+        return deploymentProducer;
     }
 
     /**

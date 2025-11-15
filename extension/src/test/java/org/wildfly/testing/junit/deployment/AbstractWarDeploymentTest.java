@@ -10,33 +10,21 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.wildfly.testing.junit.annotations.DeploymentProducer;
-import org.wildfly.testing.junit.annotations.Domain;
-import org.wildfly.testing.junit.annotations.DomainServer;
 import org.wildfly.testing.junit.annotations.RequestPath;
 import org.wildfly.testing.junit.annotations.ServerResource;
 import org.wildfly.testing.junit.annotations.WildFlyTest;
 
 /**
+ * Abstract base class for WAR deployment tests. Subclasses only need to provide the deployment method.
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 @WildFlyTest
-@Domain("main-server-group")
-public class DomainDeploymentIT {
-
-    @DeploymentProducer
-    public static WebArchive createDeployment() {
-        return ShrinkWrap.create(WebArchive.class)
-                .addClasses(TestServlet.class);
-    }
+abstract class AbstractWarDeploymentTest {
 
     @ServerResource
-    @DomainServer("server-one")
     @RequestPath("/test")
     private URI uri;
 
@@ -56,6 +44,7 @@ public class DomainDeploymentIT {
         final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         Assertions.assertEquals(200, response.statusCode(),
                 () -> String.format("Expected HTTP status code %d: %s", response.statusCode(), response.body()));
-        Assertions.assertTrue(response.body().startsWith("Test"));
+        Assertions.assertTrue(response.body().startsWith("Test"),
+                () -> String.format("Expected response to start with 'Test', but was: %s", response.body()));
     }
 }
