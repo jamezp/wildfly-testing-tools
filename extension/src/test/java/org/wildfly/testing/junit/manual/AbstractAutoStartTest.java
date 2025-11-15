@@ -16,12 +16,11 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.annotations.DeploymentProducer;
+import org.wildfly.testing.junit.annotations.GenerateDeployment;
 import org.wildfly.testing.junit.annotations.ManualMode;
 import org.wildfly.testing.junit.annotations.ServerResource;
 import org.wildfly.testing.junit.annotations.WildFlyTest;
@@ -34,10 +33,9 @@ import org.wildfly.testing.junit.annotations.WildFlyTest;
 @ManualMode(true)
 abstract class AbstractAutoStartTest implements ManualModeTest {
 
-    @DeploymentProducer
-    public static WebArchive createDeployment() {
-        return ShrinkWrap.create(WebArchive.class)
-                .addClasses(TestServlet.class);
+    @GenerateDeployment
+    public static void createDeployment(final WebArchive war) {
+        war.addClasses(TestServlet.class);
     }
 
     @ServerResource
@@ -65,7 +63,8 @@ abstract class AbstractAutoStartTest implements ManualModeTest {
                 .build();
         final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         Assertions.assertEquals(200, response.statusCode(),
-                () -> String.format("Expected HTTP status code %d: %s", response.statusCode(), response.body()));
+                () -> String.format("Expected HTTP status code %d for %s: %s", response.statusCode(), getUri(),
+                        response.body()));
         Assertions.assertTrue(response.body().startsWith("Test"));
     }
 

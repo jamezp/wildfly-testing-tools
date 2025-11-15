@@ -10,38 +10,33 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.wildfly.testing.junit.annotations.DeploymentProducer;
-import org.wildfly.testing.junit.annotations.Domain;
-import org.wildfly.testing.junit.annotations.DomainServer;
-import org.wildfly.testing.junit.annotations.RequestPath;
+import org.wildfly.plugin.tools.server.ServerManager;
+import org.wildfly.testing.junit.annotations.GenerateDeployment;
 import org.wildfly.testing.junit.annotations.ServerResource;
 import org.wildfly.testing.junit.annotations.WildFlyTest;
+import org.wildfly.testing.junit.api.Deployments;
 
 /**
+ * Tests {@link GenerateDeployment} with EAR type using {@link Deployments} utility.
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 @WildFlyTest
-@Domain("main-server-group")
-public class DomainDeploymentIT {
-
-    @DeploymentProducer
-    public static WebArchive createDeployment() {
-        return ShrinkWrap.create(WebArchive.class)
-                .addClasses(TestServlet.class);
-    }
+abstract class AbstractEarDeploymentTest {
 
     @ServerResource
-    @DomainServer("server-one")
-    @RequestPath("/test")
-    private URI uri;
+    private ServerManager serverManager;
+
+    @Test
+    public void serverRunningWithEarDeployment() {
+        Assertions.assertTrue(serverManager.isRunning(), "Server should be running with EAR deployment");
+    }
 
     @Test
     public void validateUri() {
+        final URI uri = uri();
         Assertions.assertNotNull(uri);
         Assertions.assertTrue(uri.toString().endsWith("/test"),
                 () -> String.format("Expected URI to contain the request path /test at the end: %s", uri));
@@ -50,7 +45,7 @@ public class DomainDeploymentIT {
     @Test
     public void checkResponse() throws Exception {
         final HttpClient client = HttpClient.newHttpClient();
-        final HttpRequest request = HttpRequest.newBuilder(uri)
+        final HttpRequest request = HttpRequest.newBuilder(uri())
                 .GET()
                 .build();
         final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -58,4 +53,6 @@ public class DomainDeploymentIT {
                 () -> String.format("Expected HTTP status code %d: %s", response.statusCode(), response.body()));
         Assertions.assertTrue(response.body().startsWith("Test"));
     }
+
+    protected abstract URI uri();
 }

@@ -13,7 +13,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Used to identify a method as a method which creates a deployment. The method must be static.
+ * Used to identify a method as a method which creates a deployment. The method must be static and must have a return
+ * type of any valid {@link org.jboss.shrinkwrap.api.Archive}.
+ * <p>
+ * The method can have no parameters or at most one parameter of type {@link org.junit.jupiter.api.TestInfo}.
+ * </p>
+ * <p>
+ * A {@link DeploymentProducer} method cannot be present on the same test that includes a {@link GenerateDeployment}. These are
+ * mutually exclusive deployment descriptors.
+ * </p>
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
