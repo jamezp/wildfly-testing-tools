@@ -20,10 +20,10 @@ import org.junit.platform.commons.JUnitException;
 import org.kohsuke.MetaInfServices;
 import org.wildfly.plugin.tools.server.DomainManager;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.annotations.DomainServer;
-import org.wildfly.testing.junit.annotations.RequestPath;
-import org.wildfly.testing.junit.api.ServerConfiguration;
-import org.wildfly.testing.junit.api.ServerResourceProducer;
+import org.wildfly.testing.junit.extension.annotations.DomainServer;
+import org.wildfly.testing.junit.extension.annotations.RequestPath;
+import org.wildfly.testing.junit.extension.api.ServerConfiguration;
+import org.wildfly.testing.junit.extension.api.ServerResourceProducer;
 
 /**
  * Produces {@link URI} instances for injection into test fields and parameters.

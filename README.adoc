@@ -272,7 +272,7 @@ within this time, an exception is thrown.
 == Extending
 
 You can extend the resource injection via the `@ServerResource` annotation by implementing a
-`org.wildfly.testing.junit.api.ServerResourceProducer`.
+`org.wildfly.testing.junit.extension.api.ServerResourceProducer`.
 
 [source,java]
 ----

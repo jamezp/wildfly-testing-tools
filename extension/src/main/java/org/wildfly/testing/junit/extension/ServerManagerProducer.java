@@ -10,7 +10,7 @@ import java.lang.annotation.Annotation;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.kohsuke.MetaInfServices;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.api.ServerResourceProducer;
+import org.wildfly.testing.junit.extension.api.ServerResourceProducer;
 
 /**
  * Produces {@link ServerManager} instances for injection into test fields and parameters.

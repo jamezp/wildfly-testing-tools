@@ -20,8 +20,8 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.support.AnnotationSupport;
-import org.wildfly.testing.junit.annotations.ServerResource;
-import org.wildfly.testing.junit.api.ServerResourceProducer;
+import org.wildfly.testing.junit.extension.annotations.ServerResource;
+import org.wildfly.testing.junit.extension.api.ServerResourceProducer;
 
 /**
  * An extension for using {@linkplain ServerResourceProducer producers} to inject fields annotated with {@link ServerResource}

@@ -25,8 +25,9 @@
     </description>
 
     <modules>
-        <module>extension</module>
         <module>tools</module>
+        <module>api</module>
+        <module>extension</module>
     </modules>
 
     <properties>
