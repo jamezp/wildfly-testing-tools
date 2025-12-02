@@ -25,26 +25,19 @@
     </description>
 
     <modules>
-        <module>extension</module>
+        <module>boms/project-bom</module>
         <module>tools</module>
+        <module>api</module>
+        <module>extension</module>
+        <module>boms/bom</module>
     </modules>
 
     <properties>
         <!-- Override the release version -->
         <maven.compiler.release>17</maven.compiler.release>
-
-        <!-- Project dependencies -->
-        <version.org.jboss.logging.jboss-logging>3.6.1.Final</version.org.jboss.logging.jboss-logging>
-        <version.org.jsoup>1.21.2</version.org.jsoup>
         <version.org.kohsuke.metainf-services>1.11</version.org.kohsuke.metainf-services>
-        <version.org.wildfly.launcher>1.0.2.Final</version.org.wildfly.launcher>
-        <version.org.wildfly.plugin.tools>2.0.0.Alpha2</version.org.wildfly.plugin.tools>
         <!-- Used to override the provisioned version of WildFly. Defaults to empty which is the latest from the channel. -->
         <version.org.wildfly/>
-
-        <!-- Test dependencies -->
-        <version.org.junit>6.0.1</version.org.junit>
-        <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
 
         <!-- Plugin versions -->
         <version.formatter.maven.plugin>2.29.0</version.formatter.maven.plugin>
@@ -64,10 +57,10 @@
         <!-- checkstyle configuration -->
         <linkXRef>false</linkXRef>
 
-        <wildfly.scm.connection>scm:git://github.com/wildfly/wildfly-testing-tools.git</wildfly.scm.connection>
-        <wildfly.scm.developer.connection>scm:git:git@github.com:wildfly/wildfly-testing-toolsn.git
+        <wildfly.scm.connection>scm:git://github.com/wildfly-extras/wildfly-testing-tools.git</wildfly.scm.connection>
+        <wildfly.scm.developer.connection>scm:git:git@github.com:wildfly-extras/wildfly-testing-tools.git
         </wildfly.scm.developer.connection>
-        <wildfly.scm.url>https://github.com/wildfly/wildfly-testing-tools</wildfly.scm.url>
+        <wildfly.scm.url>https://github.com/wildfly-extras/wildfly-testing-tools</wildfly.scm.url>
 
         <!-- Other properties -->
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -96,7 +89,7 @@
 
     <issueManagement>
         <system>GitHub</system>
-        <url>https://github.com/wildfly/wildfly-testing-tools/issues</url>
+        <url>https://github.com/wildfly-extras/wildfly-testing-tools/issues</url>
     </issueManagement>
 
     <scm>
@@ -114,65 +107,11 @@
         </license>
     </licenses>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>junit-bom</artifactId>
-                <version>${version.org.junit}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.platform</groupId>
-                <artifactId>jakarta.jakartaee-bom</artifactId>
-                <version>10.0.0</version>
-                <scope>import</scope>
-                <type>pom</type>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${version.org.jboss.logging.jboss-logging}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-bom</artifactId>
-                <version>6.2.14.Final</version>
-                <scope>import</scope>
-                <type>pom</type>
-            </dependency>
-            <dependency>
-                <groupId>org.jsoup</groupId>
-                <artifactId>jsoup</artifactId>
-                <version>${version.org.jsoup}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.kohsuke.metainf-services</groupId>
-                <artifactId>metainf-services</artifactId>
-                <version>${version.org.kohsuke.metainf-services}</version>
-                <scope>provided</scope>
-                <optional>true</optional>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.plugins</groupId>
-                <artifactId>wildfly-plugin-tools</artifactId>
-                <version>${version.org.wildfly.plugin.tools}</version>
-            </dependency>
-            <!-- We want this last to hopefully not have it override other dependencies -->
-            <dependency>
-                <groupId>org.jboss.shrinkwrap</groupId>
-                <artifactId>shrinkwrap-depchain</artifactId>
-                <version>1.2.6</version>
-                <type>pom</type>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>org.kohsuke.metainf-services</groupId>
             <artifactId>metainf-services</artifactId>
+            <version>${version.org.kohsuke.metainf-services}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>

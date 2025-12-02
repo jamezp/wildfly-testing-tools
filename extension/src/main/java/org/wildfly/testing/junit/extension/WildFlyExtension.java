@@ -24,11 +24,11 @@ import org.wildfly.plugin.tools.UndeployDescription;
 import org.wildfly.plugin.tools.server.Configuration;
 import org.wildfly.plugin.tools.server.ServerManager;
 import org.wildfly.plugin.tools.server.ServerManagerListener;
-import org.wildfly.testing.junit.annotations.Domain;
-import org.wildfly.testing.junit.annotations.ManualMode;
-import org.wildfly.testing.junit.api.DomainConfigurationFactory;
-import org.wildfly.testing.junit.api.ServerConfiguration;
-import org.wildfly.testing.junit.api.StandaloneConfigurationFactory;
+import org.wildfly.testing.junit.extension.annotations.Domain;
+import org.wildfly.testing.junit.extension.annotations.ManualMode;
+import org.wildfly.testing.junit.extension.api.DomainConfigurationFactory;
+import org.wildfly.testing.junit.extension.api.ServerConfiguration;
+import org.wildfly.testing.junit.extension.api.StandaloneConfigurationFactory;
 
 /**
  * JUnit extension that manages WildFly server lifecycle and per-test-class deployments.

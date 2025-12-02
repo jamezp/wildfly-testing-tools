@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.wildfly.testing</groupId>
+        <artifactId>wildfly-testing-tools-parent</artifactId>
+        <version>1.0.0.Beta1-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>wildfly-testing-tools-project-bom</artifactId>
+    <packaging>pom</packaging>
+
+    <properties>
+        <!-- Project dependencies -->
+        <version.org.jboss.logging.jboss-logging>3.6.1.Final</version.org.jboss.logging.jboss-logging>
+        <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
+        <version.org.jsoup>1.21.2</version.org.jsoup>
+        <version.org.junit>6.0.1</version.org.junit>
+        <version.org.wildfly.launcher>1.0.2.Final</version.org.wildfly.launcher>
+        <version.org.wildfly.plugin.tools>2.0.0.Alpha2</version.org.wildfly.plugin.tools>
+    </properties>
+
+    <name>WildFly Testing Tools: Project BOM</name>
+    <description>WildFly Testing Tools Project Bill of Materials</description>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${version.org.junit}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.platform</groupId>
+                <artifactId>jakarta.jakartaee-bom</artifactId>
+                <version>10.0.0</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${version.org.jboss.logging.jboss-logging}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-bom</artifactId>
+                <version>6.2.14.Final</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${version.org.jsoup}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-plugin-tools</artifactId>
+                <version>${version.org.wildfly.plugin.tools}</version>
+            </dependency>
+            <!-- We want this last to hopefully not have it override other dependencies -->
+            <dependency>
+                <groupId>org.jboss.shrinkwrap</groupId>
+                <artifactId>shrinkwrap-depchain</artifactId>
+                <version>1.2.6</version>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

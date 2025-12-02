@@ -11,7 +11,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.kohsuke.MetaInfServices;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.api.ServerResourceProducer;
+import org.wildfly.testing.junit.extension.api.ServerResourceProducer;
 
 /**
  * Produces {@link ModelControllerClient} instances for injection into test fields and parameters.

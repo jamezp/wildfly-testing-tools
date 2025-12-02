@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.kohsuke.MetaInfServices;
 import org.wildfly.plugin.tools.DeploymentManager;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.api.ServerResourceProducer;
+import org.wildfly.testing.junit.extension.api.ServerResourceProducer;
 
 /**
  * Produces {@link DeploymentManager} instances for injection into test fields and parameters.
