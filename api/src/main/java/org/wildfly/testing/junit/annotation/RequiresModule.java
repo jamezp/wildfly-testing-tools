@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.wildfly.testing.junit.annotations;
+package org.wildfly.testing.junit.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

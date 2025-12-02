@@ -20,7 +20,7 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.support.AnnotationSupport;
-import org.wildfly.testing.junit.extension.annotations.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
 import org.wildfly.testing.junit.extension.api.ServerResourceProducer;
 
 /**

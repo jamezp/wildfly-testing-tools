@@ -9,9 +9,9 @@ import java.net.URI;
 
 import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
 import org.junit.jupiter.api.TestInfo;
-import org.wildfly.testing.junit.extension.annotations.GenerateDeployment;
-import org.wildfly.testing.junit.extension.annotations.RequestPath;
-import org.wildfly.testing.junit.extension.annotations.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.GenerateDeployment;
+import org.wildfly.testing.junit.extension.annotation.RequestPath;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
 import org.wildfly.testing.tools.deployment.Deployments;
 
 /**

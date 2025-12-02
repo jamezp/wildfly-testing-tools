@@ -28,8 +28,8 @@ import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.wildfly.plugin.tools.VersionComparator;
-import org.wildfly.testing.junit.annotations.AnyOf;
-import org.wildfly.testing.junit.annotations.RequiresModule;
+import org.wildfly.testing.junit.annotation.AnyOf;
+import org.wildfly.testing.junit.annotation.RequiresModule;
 import org.xml.sax.SAXException;
 
 /**

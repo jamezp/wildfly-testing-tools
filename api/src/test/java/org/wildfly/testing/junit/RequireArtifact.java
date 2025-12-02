@@ -7,7 +7,7 @@ package org.wildfly.testing.junit;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.wildfly.testing.junit.annotations.RequiresModule;
+import org.wildfly.testing.junit.annotation.RequiresModule;
 
 /**
  * @author <a href="mailto:jpekrins@ibm.com">James R. Perkins</a>

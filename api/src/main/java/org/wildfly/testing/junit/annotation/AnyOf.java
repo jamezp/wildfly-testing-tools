@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.wildfly.testing.junit.annotations;
+package org.wildfly.testing.junit.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -12,21 +12,22 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.wildfly.testing.junit.condition.RequiresModuleExecutionCondition;
+
 /**
- * A container for the {@link RequiresModule} annotations to make it a {@link java.lang.annotation.Repeatable}
- * annotation.
- * <p>
- * Note that all modules must exist within the parameters defined for this to return a
- * {@linkplain org.junit.jupiter.api.extension.ConditionEvaluationResult#enabled(String) enabled condition}.
- * </p>
+ * Enables or disables tests based on the {@link RequiresModule} annotations in the {@linkplain #value() value array}.
+ * Only one of the conditions needs to be {@code true} for this to enable tests.
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
+ * @see RequiresModule
  */
 @Inherited
 @Documented
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RequiresModules {
+@ExtendWith(RequiresModuleExecutionCondition.class)
+public @interface AnyOf {
 
     /**
      * An array of one or more {@link RequiresModule} annotations.

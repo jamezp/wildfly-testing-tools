@@ -8,8 +8,8 @@ package org.wildfly.testing.extension.extension.deployment;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.extension.annotations.ServerResource;
-import org.wildfly.testing.junit.extension.annotations.WildFlyTest;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 
 /**
  * Abstract base class for JAR deployment tests. Subclasses only need to provide the deployment method.

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.wildfly.testing.junit.extension.annotations;
+package org.wildfly.testing.junit.extension.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -14,19 +14,19 @@ import java.lang.annotation.Target;
 import java.net.URI;
 
 /**
- * Qualifies the injection point for a {@link jakarta.ws.rs.client.WebTarget} with a relative path with a prefix of
- * {@link SeBootstrap.Configuration#baseUriBuilder()}.
+ * Qualifies the injection point for a {@link URI} to indicate which server in a domain is being targeted.
  *
  * <pre>
- * &#x40;RestBootstrap(OrderApplication.class)
+ * &#x40;WildlyTest
  * public class OrderTest {
- *     &#x40;Inject
- *     &#x40;RequestPath("/orders")
- *     private WebTarget ordersTarget;
+ *     &#x40;ServerResource
+ *     &#x40;DomainServer("server-one")
+ *     &#x40;RequestPath("orders")
+ *     private URI uri;
  *
  *     &#x40;Test
  *     public void listOrders() throws Exception {
- *         try (Response response = ordersTarget.request().get()) {
+ *         try (Response response = Client.newClient().target(uri).request().get()) {
  *             Assertions.assertEquals(200, response.getStatus(),
  *                     () -> String.format("Failed to get orders: %s", response.readEntity(String.class)));
  *         }
@@ -40,13 +40,12 @@ import java.net.URI;
 @Documented
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RequestPath {
+public @interface DomainServer {
 
     /**
-     * The relative path the {@link jakarta.ws.rs.client.Client#target(URI)} should use based on the
-     * {@link SeBootstrap.Configuration#baseUriBuilder()} path.
+     * The name of the domain server
      *
-     * @return the relative path
+     * @return the name of the domain server
      */
     String value();
 }

@@ -9,7 +9,7 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestInfo;
-import org.wildfly.testing.junit.extension.annotations.GenerateDeployment;
+import org.wildfly.testing.junit.extension.annotation.GenerateDeployment;
 
 /**
  * Tests {@link GenerateDeployment} with {@link TestInfo} parameter.

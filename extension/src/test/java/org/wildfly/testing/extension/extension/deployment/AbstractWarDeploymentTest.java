@@ -12,9 +12,9 @@ import java.net.http.HttpResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.wildfly.testing.junit.extension.annotations.RequestPath;
-import org.wildfly.testing.junit.extension.annotations.ServerResource;
-import org.wildfly.testing.junit.extension.annotations.WildFlyTest;
+import org.wildfly.testing.junit.extension.annotation.RequestPath;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 
 /**
  * Abstract base class for WAR deployment tests. Subclasses only need to provide the deployment method.

@@ -10,8 +10,8 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.wildfly.testing.junit.annotations.JBossHome;
-import org.wildfly.testing.junit.extension.annotations.WildFlyTest;
+import org.wildfly.testing.junit.annotation.JBossHome;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 
 /**
  * @author <a href="mailto:jpekrins@ibm.com">James R. Perkins</a>

@@ -14,12 +14,12 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.wildfly.testing.junit.extension.annotations.DeploymentProducer;
-import org.wildfly.testing.junit.extension.annotations.Domain;
-import org.wildfly.testing.junit.extension.annotations.DomainServer;
-import org.wildfly.testing.junit.extension.annotations.RequestPath;
-import org.wildfly.testing.junit.extension.annotations.ServerResource;
-import org.wildfly.testing.junit.extension.annotations.WildFlyTest;
+import org.wildfly.testing.junit.extension.annotation.DeploymentProducer;
+import org.wildfly.testing.junit.extension.annotation.Domain;
+import org.wildfly.testing.junit.extension.annotation.DomainServer;
+import org.wildfly.testing.junit.extension.annotation.RequestPath;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 
 /**
  *

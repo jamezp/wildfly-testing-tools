@@ -23,10 +23,10 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.wildfly.testing.junit.annotations.RequiresModule;
-import org.wildfly.testing.junit.extension.annotations.DeploymentProducer;
-import org.wildfly.testing.junit.extension.annotations.ServerResource;
-import org.wildfly.testing.junit.extension.annotations.WildFlyTest;
+import org.wildfly.testing.junit.annotation.RequiresModule;
+import org.wildfly.testing.junit.extension.annotation.DeploymentProducer;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 
 /**
  * @author <a href="mailto:jpekrins@ibm.com">James R. Perkins</a>

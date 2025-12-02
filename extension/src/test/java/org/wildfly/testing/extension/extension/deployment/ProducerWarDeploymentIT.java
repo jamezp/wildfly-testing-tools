@@ -7,7 +7,7 @@ package org.wildfly.testing.extension.extension.deployment;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.wildfly.testing.junit.extension.annotations.DeploymentProducer;
+import org.wildfly.testing.junit.extension.annotation.DeploymentProducer;
 
 /**
  * Tests {@link DeploymentProducer} creating a WAR - same test logic as {@link GenerateWarDeploymentIT}.

@@ -20,8 +20,8 @@ import org.junit.platform.commons.JUnitException;
 import org.kohsuke.MetaInfServices;
 import org.wildfly.plugin.tools.server.DomainManager;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.extension.annotations.DomainServer;
-import org.wildfly.testing.junit.extension.annotations.RequestPath;
+import org.wildfly.testing.junit.extension.annotation.DomainServer;
+import org.wildfly.testing.junit.extension.annotation.RequestPath;
 import org.wildfly.testing.junit.extension.api.ServerConfiguration;
 import org.wildfly.testing.junit.extension.api.ServerResourceProducer;
 

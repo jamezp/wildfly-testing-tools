@@ -12,7 +12,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 /**
  * An implementation of this interface is used to inject static fields, instance fields and parameters. For static
  * fields and instance fields, the field must be annotated with
- * {@link org.wildfly.testing.junit.extension.annotations.ServerResource}.
+ * {@link org.wildfly.testing.junit.extension.annotation.ServerResource}.
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */

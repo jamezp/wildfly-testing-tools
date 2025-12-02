@@ -6,7 +6,7 @@
 package org.wildfly.testing.extension.extension.deployment;
 
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.wildfly.testing.junit.extension.annotations.GenerateDeployment;
+import org.wildfly.testing.junit.extension.annotation.GenerateDeployment;
 
 /**
  * Tests {@link GenerateDeployment} with inferred WAR type.

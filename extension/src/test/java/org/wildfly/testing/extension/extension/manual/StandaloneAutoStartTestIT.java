@@ -7,8 +7,8 @@ package org.wildfly.testing.extension.extension.manual;
 
 import java.net.URI;
 
-import org.wildfly.testing.junit.extension.annotations.RequestPath;
-import org.wildfly.testing.junit.extension.annotations.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.RequestPath;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
 
 /**
  *

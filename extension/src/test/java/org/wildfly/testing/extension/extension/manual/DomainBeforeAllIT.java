@@ -5,7 +5,7 @@
 
 package org.wildfly.testing.extension.extension.manual;
 
-import org.wildfly.testing.junit.extension.annotations.Domain;
+import org.wildfly.testing.junit.extension.annotation.Domain;
 
 /**
  *
