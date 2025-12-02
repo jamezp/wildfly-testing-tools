@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.wildfly.testing</groupId>
+        <artifactId>wildfly-testing-tools-parent</artifactId>
+        <version>1.0.0.Beta1-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>wildfly-testing-tools-bom</artifactId>
+    <packaging>pom</packaging>
+
+    <name>WildFly Testing Tools: BOM</name>
+    <description>WildFly Testing Tools Bill of Materials</description>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.wildfly.testing</groupId>
+                <artifactId>wildfly-junit-api</artifactId>
+                <version>1.0.0.Beta1-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.testing</groupId>
+                <artifactId>wildfly-junit-extension</artifactId>
+                <version>1.0.0.Beta1-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.testing</groupId>
+                <artifactId>wildfly-testing-tools</artifactId>
+                <version>1.0.0.Beta1-SNAPSHOT</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

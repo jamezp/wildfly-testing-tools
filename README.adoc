@@ -1,9 +1,72 @@
-.= WildFly JUnit Utilities
+= WildFly Testing Tools
+
+Various testing tools, utilities and JUnit extensions for testing with a WildFly based server.
+
+== Usage
+
+To use the tooling you can simply import the Bill of Materials POM:
+
+[source,xml]
+----
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.wildfly.testing</groupId>
+            <artifactId>wildfly-testing-tools-bom</artifactId>
+            <version>${version.org.wildfly.testing}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+----
+
+=== JUnit API
+
+The JUnit API contains annotations for skipping tests if minimal module requirements are not met. It also supports
+injecting the value of the JBoss Home, server, directory. This can be used with JUnit 5+ and the WildFly JUnit Extension
+or WildFly Arquillian.
+
+.JUnit API
+[source,xml]
+----
+<dependency>
+    <groupId>org.wildfly.testing</groupId>
+    <artifactId>wildfly-junit-api</artifactId>
+</dependency>
+----
+
+=== JUnit Extension
 
 This JUnit Extension manages the lifecycle of a WildFly based server. It starts a server and keeps it running until all
 tests have completed.
 
 You can optionally deploy test applications per-test to the server. Only one deployment can be defined per-test.
+
+.JUnit Extension
+[source,xml]
+----
+<dependency>
+    <groupId>org.wildfly.testing</groupId>
+    <artifactId>wildfly-junit-extension</artifactId>
+</dependency>
+----
+
+=== Testing Tools
+
+The testing tools can be used to help create deployment descriptors or simple utilities for creating deployments. It
+can also create modules based and delete the created module.
+
+This can be used for any Shrinkwrap based testing.
+
+.Testing Tools
+[source,xml]
+----
+<dependency>
+    <groupId>org.wildfly.testing</groupId>
+    <artifactId>wildfly-testing-tools</artifactId>
+</dependency>
+----
 
 == Annotations
 

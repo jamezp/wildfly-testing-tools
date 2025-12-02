@@ -17,8 +17,17 @@
     <artifactId>wildfly-junit-api</artifactId>
     <name>WildFly JUnit API</name>
 
-    <properties>
-    </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.wildfly.testing</groupId>
+                <artifactId>wildfly-testing-tools-project-bom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
