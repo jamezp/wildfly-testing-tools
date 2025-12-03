@@ -7,7 +7,7 @@ package org.wildfly.testing.extension.extension.deployment;
 
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive;
-import org.wildfly.testing.junit.extension.annotations.GenerateDeployment;
+import org.wildfly.testing.junit.extension.annotation.GenerateDeployment;
 
 /**
  * Tests {@link GenerateDeployment} with inferred RAR type from {@link ResourceAdapterArchive} parameter.

@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.wildfly.testing.junit.annotations.JBossHome;
+import org.wildfly.testing.junit.annotation.JBossHome;
 
 /**
  *

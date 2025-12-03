@@ -13,7 +13,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
-import org.wildfly.testing.junit.annotations.JBossHome;
+import org.wildfly.testing.junit.annotation.JBossHome;
 
 /**
  * Resolves the {@code jboss.home} system property or if not set the {@code JBOSS_HOME} environment variable. If neither

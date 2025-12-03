@@ -19,9 +19,9 @@ import org.junit.platform.commons.JUnitException;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.commons.support.HierarchyTraversalMode;
 import org.junit.platform.commons.util.AnnotationUtils;
-import org.wildfly.testing.junit.extension.annotations.DeploymentProducer;
-import org.wildfly.testing.junit.extension.annotations.GenerateDeployment;
-import org.wildfly.testing.junit.extension.annotations.ManualMode;
+import org.wildfly.testing.junit.extension.annotation.DeploymentProducer;
+import org.wildfly.testing.junit.extension.annotation.GenerateDeployment;
+import org.wildfly.testing.junit.extension.annotation.ManualMode;
 
 /**
  * Support class for the extension.

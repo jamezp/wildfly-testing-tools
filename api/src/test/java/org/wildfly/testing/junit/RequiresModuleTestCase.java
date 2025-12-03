@@ -18,10 +18,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.testkit.engine.EngineTestKit;
 import org.junit.platform.testkit.engine.EventConditions;
-import org.wildfly.testing.junit.annotations.JBossHome;
+import org.wildfly.testing.junit.annotation.JBossHome;
 
 /**
- * Tests for the {@link org.wildfly.testing.junit.annotations.RequiresModule} annotation.
+ * Tests for the {@link org.wildfly.testing.junit.annotation.RequiresModule} annotation.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */

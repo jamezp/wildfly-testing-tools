@@ -12,7 +12,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.extension.annotations.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
 
 /**
  *

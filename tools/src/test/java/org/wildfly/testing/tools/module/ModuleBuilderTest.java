@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.wildfly.testing.tools.modules;
+package org.wildfly.testing.tools.module;
 
 import java.io.IOException;
 import java.net.URI;
@@ -134,7 +134,7 @@ public class ModuleBuilderTest {
     @Test
     public void complexModule(final TestInfo testInfo) throws Exception {
         final Set<ModuleDependency> dependencies = Set.of(
-                ModuleDependency.builder("org.wildfly.testing.tools.modules.dep1")
+                ModuleDependency.builder("org.wildfly.testing.tools.module.dep1")
                         .export(true)
                         .services(ModuleDependency.Services.IMPORT)
                         .optional(true)
@@ -145,7 +145,7 @@ public class ModuleBuilderTest {
                         .addExportFilter("META-INF/config", true)
                         .addExportFilter("META-INF/internal", false)
                         .build(),
-                ModuleDependency.builder("org.wildfly.testing.tools.modules.dep2")
+                ModuleDependency.builder("org.wildfly.testing.tools.module.dep2")
                         .optional(true)
                         .build());
         final ModuleDescription moduleDescription = ModuleBuilder.of(createModuleName(testInfo))
@@ -154,10 +154,10 @@ public class ModuleBuilderTest {
                 .build();
 
         final Document document = parseAndAssert(moduleDescription, Set.of("test-module.jar"),
-                Set.of("org.wildfly.testing.tools.modules.dep1", "org.wildfly.testing.tools.modules.dep2"));
-        // The org.wildfly.testing.tools.modules.dep1 module should be a complex dependency
+                Set.of("org.wildfly.testing.tools.module.dep1", "org.wildfly.testing.tools.module.dep2"));
+        // The org.wildfly.testing.tools.module.dep1 module should be a complex dependency
         final Elements moduleElement = document
-                .select("dependencies > module[name=\"org.wildfly.testing.tools.modules.dep1\"]");
+                .select("dependencies > module[name=\"org.wildfly.testing.tools.module.dep1\"]");
         Assertions.assertFalse(moduleElement.isEmpty(), "Module dependencies should not be empty");
         // This should be an exported dependency
         Assertions.assertEquals("true", moduleElement.attr("export"),

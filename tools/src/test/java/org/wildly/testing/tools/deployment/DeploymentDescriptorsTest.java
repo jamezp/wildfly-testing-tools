@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.wildly.testing.tools.deployments;
+package org.wildly.testing.tools.deployment;
 
 import java.io.IOException;
 import java.io.InputStream;

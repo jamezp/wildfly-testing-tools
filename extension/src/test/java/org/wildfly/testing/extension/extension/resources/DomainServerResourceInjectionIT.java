@@ -14,10 +14,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.wildfly.plugin.tools.DeploymentManager;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.extension.annotations.Domain;
-import org.wildfly.testing.junit.extension.annotations.RequestPath;
-import org.wildfly.testing.junit.extension.annotations.ServerResource;
-import org.wildfly.testing.junit.extension.annotations.WildFlyTest;
+import org.wildfly.testing.junit.extension.annotation.Domain;
+import org.wildfly.testing.junit.extension.annotation.RequestPath;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 
 /**
  *

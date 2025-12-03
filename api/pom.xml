@@ -85,21 +85,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- We need to bind a new execution of this to run after provisioning is done so the module.xml file
-                 required for testing is not deleted.
-            -->
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-module</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>testResources</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 </project>
