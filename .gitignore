@@ -22,3 +22,6 @@ nb-configuration.xml
 # Release files
 *.releaseBackup
 release.properties
+
+# Known AI directories
+.claude/
