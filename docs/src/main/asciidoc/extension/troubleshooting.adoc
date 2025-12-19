@@ -1,0 +1,389 @@
+= Troubleshooting
+include::common-attributes.adoc[]
+
+This chapter covers common issues you may encounter when using {project-name} and how to resolve them.
+
+== Server Startup Issues
+
+=== Server Won't Start
+
+**Problem:** Tests fail with "Failed to start server" or timeout errors.
+
+**Common Causes:**
+
+1. **Port Already in Use**
++
+Another process is using WildFly's default ports (8080, 9990).
++
+[source,bash]
+----
+# Check what's using port 8080
+lsof -i :8080
+# Or on Windows
+netstat -ano | findstr :8080
+----
++
+**Solution:** Stop the conflicting process or configure WildFly to use different ports:
++
+[source,bash]
+----
+mvn test -Dwildfly.http.port=8180 -Dwildfly.management.port=10090
+----
+
+2. **JBOSS_HOME Not Set**
++
+**Error:** `java.lang.IllegalStateException: JBOSS_HOME is not set`
++
+**Solution:** Set the `jboss.home` system property or `JBOSS_HOME` environment variable:
++
+[source,bash]
+----
+mvn test -Djboss.home=/path/to/wildfly
+----
++
+Or in your `pom.xml`:
++
+[source,xml]
+----
+<properties>
+    <jboss.home>${project.build.directory}/wildfly</jboss.home>
+</properties>
+----
+
+3. **Insufficient Timeout**
++
+**Error:** Server startup times out before WildFly is fully started.
++
+**Solution:** Increase the timeout value:
++
+[source,bash]
+----
+mvn test -Dwildfly.timeout=180
+----
+
+4. **Java Version Mismatch**
++
+**Error:** `UnsupportedClassVersionError` or similar.
++
+**Solution:** Ensure WildFly and your tests use compatible Java versions.
+
+=== Server Starts But Tests Fail to Connect
+
+**Problem:** Server starts successfully but tests cannot connect to it.
+
+**Solution:** Check that the HTTP configuration matches your server's configuration:
+
+[source,bash]
+----
+mvn test -Dwildfly.http.host=localhost -Dwildfly.http.port=8080
+----
+
+== Deployment Issues
+
+=== Deployment Fails
+
+**Problem:** `DeploymentException` or deployment validation errors.
+
+**Common Causes:**
+
+1. **Missing Dependencies**
++
+**Error:** `ClassNotFoundException` or `NoClassDefFoundError` in deployment.
++
+**Solution:** Add missing classes to your deployment or add module dependencies:
++
+[source,java]
+----
+@DeploymentProducer
+public static WebArchive deployment() {
+    return ShrinkWrap.create(WebArchive.class)
+            .addClass(MyClass.class)
+            .addPackage("com.example.mypackage")
+            .addAsLibrary(new File("path/to/library.jar"));
+}
+----
++
+Or use `jboss-deployment-structure.xml`:
++
+[source,java]
+----
+Asset deploymentStructure = DeploymentDescriptors.createJBossDeploymentStructure(
+    Set.of("org.jboss.logging", "org.jboss.resteasy.resteasy-jackson2-provider"),
+    Set.of()
+);
+war.addAsManifestResource(deploymentStructure, "jboss-deployment-structure.xml");
+----
+
+2. **Invalid Deployment Descriptor**
++
+**Error:** XML parsing errors or validation failures.
++
+**Solution:** Validate your deployment descriptors. Use the `DeploymentDescriptors` utility class to generate valid descriptors.
+
+3. **CDI Issues**
++
+**Error:** `WELD-001408: Unsatisfied dependencies` or similar CDI errors.
++
+**Solution:** Ensure `beans.xml` is present and properly configured:
++
+[source,java]
+----
+war.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+----
+
+=== Deployment Succeeds But Application Doesn't Work
+
+**Problem:** Deployment completes but application endpoints return 404 or other errors.
+
+**Solutions:**
+
+1. **Check Context Root**
++
+Verify the URI you're testing against matches your deployment:
++
+[source,java]
+----
+@Test
+public void test(@ServerResource URI uri) {
+    // For a servlet at /myservlet in test.war
+    URI endpoint = uri.resolve("myservlet");
+    // Test against endpoint
+}
+----
+
+2. **Check Servlet Mappings**
++
+Ensure your servlets are properly annotated or mapped in `web.xml`:
++
+[source,java]
+----
+@WebServlet("/myservlet")
+public class MyServlet extends HttpServlet {
+    // ...
+}
+----
+
+3. **Enable Debug Logging**
++
+Add logging to see what's happening:
++
+[source,java]
+----
+@Test
+public void test(@ServerResource URI uri) {
+    System.out.println("Testing against: " + uri);
+    // Your test code
+}
+----
+
+== Resource Injection Issues
+
+=== @ServerResource Not Injected
+
+**Problem:** `NullPointerException` when accessing `@ServerResource` fields.
+
+**Common Causes:**
+
+1. **Missing @WildFlyTest Annotation**
++
+**Solution:** Ensure your test class is annotated with `@WildFlyTest`:
++
+[source,java]
+----
+@WildFlyTest
+public class MyTest {
+    @ServerResource
+    private URI uri;  // Will be injected
+}
+----
+
+2. **Unsupported Resource Type**
++
+**Solution:** Only specific types can be injected. Supported types:
++
+* See the link:index.html#available-resources[Available Resources]
+* Custom types via `ServerResourceProducer` SPI
+
+== Module and Conditional Test Issues
+
+=== @RequiresModule Tests Always Skip
+
+**Problem:** Tests annotated with `@RequiresModule` are always skipped even though the module exists.
+
+**Solutions:**
+
+1. **Check Module Name**
++
+Verify the exact module name in your WildFly installation:
++
+[source,bash]
+----
+ls $JBOSS_HOME/modules/org/jboss/as/ejb3
+----
++
+Use the full module path:
++
+[source,java]
+----
+@RequiresModule("org.jboss.as.ejb3")  // Correct
+@RequiresModule("ejb3")                // Wrong
+----
+
+=== Version Requirements Not Working
+
+**Problem:** `@RequiresModule` with `minVersion` doesn't work as expected.
+
+**Solution:** Ensure the module has a proper version in its `module.xml`. Some modules may not have version information, in which case version checks will fail.
+
+== Performance Issues
+
+=== Tests Run Very Slowly
+
+**Problem:** Test suite takes much longer than expected.
+
+**Solutions:**
+
+1. **Server Restarting Too Often**
++
+Check if you're using `@ManualMode` unnecessarily. The framework is designed to keep the server running:
++
+[source,java]
+----
+// Avoid this unless necessary
+@ManualMode
+public class MyTest {
+    @ServerResource
+    private ServerManager serverManager;
+
+    @BeforeEach
+    void start() { serverManager.start(); }
+    @AfterEach
+    void stop() { serverManager.shutdown(); }
+}
+
+// Prefer this
+@WildFlyTest
+public class MyTest {
+    // Server stays running between tests
+}
+----
+
+2. **Large Deployments**
++
+Minimize deployment size by only including necessary classes:
++
+[source,java]
+----
+// Instead of
+war.addPackages(true, "com.example");
+
+// Use
+war.addClass(SpecificClass1.class)
+   .addClass(SpecificClass2.class);
+----
+
+== Domain Mode Issues
+
+=== Domain Tests Fail
+
+1. **Server Group Doesn't Exist**
++
+Verify the server group name matches your domain configuration:
++
+[source,java]
+----
+@Domain("main-server-group")  // Must match domain.xml
+----
+
+2. **Server Not in Group**
++
+Check that the server you're targeting is part of the specified group in `domain.xml`.
+
+== Getting More Information
+
+=== Enable Debug Logging
+
+Configure your logging framework to enable debug logging. If using the JBoss Log Manager add to `src/test/resources/logging.properties`:
+
+[source,properties]
+----
+loggers=org.wildfly.testing,org.jboss.as.controller.client
+
+logger.level=INFO
+logger.handlers=FILE,CONSOLE
+# Enable framework debug logging
+logger.org.wildfly.testing.level=${test.log.level:DEBUG}
+
+# Enable WildFly client logging
+logger.org.jboss.as.controller.client.level=${test.log.level:DEBUG}
+
+handler.CONSOLE=org.jboss.logmanager.handlers.ConsoleHandler
+handler.CONSOLE.formatter=COLOR-PATTERN
+handler.CONSOLE.properties=autoFlush,target
+handler.CONSOLE.autoFlush=true
+handler.CONSOLE.target=SYSTEM_OUT
+
+handler.FILE=org.jboss.logmanager.handlers.FileHandler
+handler.FILE.formatter=PATTERN
+handler.FILE.properties=autoFlush,append,fileName
+handler.FILE.constructorProperties=fileName,append
+handler.FILE.autoFlush=true
+handler.FILE.append=true
+handler.FILE.fileName=${client.log.dir}/tck-client.log
+
+formatter.COLOR-PATTERN=org.jboss.logmanager.formatters.ColorPatternFormatter
+formatter.COLOR-PATTERN.properties=pattern
+formatter.COLOR-PATTERN.pattern=[client] %d{HH\:mm\:ss,SSS} %-5p [%c] (%t) %s%e%n
+
+formatter.PATTERN=org.jboss.logmanager.formatters.PatternFormatter
+formatter.PATTERN.properties=pattern
+formatter.PATTERN.pattern=%d{yyyy-MM-dd'T'HH\:mm\:ss,SSS} %-5p [%c] (%t) %s%e%n
+----
+
+For other logging frameworks (Log4j2, Logback), configure the `org.wildfly.testing` and `org.jboss.as.controller.client` loggers at DEBUG level.
+
+=== Check Server Logs
+
+WildFly logs are in `$JBOSS_HOME/standalone/log/server.log` (standalone mode) or `$JBOSS_HOME/domain/servers/*/log/server.log` (domain mode).
+
+=== Use Remote Debugging
+
+Debug the server during tests:
+
+[source,bash]
+----
+mvn test -Dwildfly.jvm.args="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
+----
+
+Then attach your IDE's debugger to port 8787.
+
+== Common Error Messages
+
+=== "Cannot have both @DeploymentProducer and @GenerateDeployment"
+
+**Cause:** Test class has both annotations.
+
+**Solution:** Use only one deployment method per test class.
+
+=== "Failed to deploy: WFLYCTL0212: Duplicate resource"
+
+**Cause:** Trying to deploy the same deployment name multiple times.
+
+**Solution:** Ensure each test uses a unique deployment name or relies on automatic cleanup:
+
+[source,java]
+----
+@DeploymentProducer
+public static WebArchive deployment() {
+    return ShrinkWrap.create(WebArchive.class, "unique-name.war");
+}
+----
+
+== Still Having Issues?
+
+If you're still experiencing problems:
+
+1. Check the https://github.com/wildfly-extras/wildfly-testing-tools/issues[GitHub Issues] for known problems
+2. Review the link:{javadoc-url}/index.html[JavaDoc API Documentation]
+3. Ask for help on the https://wildfly.zulipchat.com/[WildFly Zulip Chat]
+4. Report bugs at https://github.com/wildfly-extras/wildfly-testing-tools/issues/new[GitHub]

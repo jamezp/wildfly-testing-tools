@@ -1,0 +1,227 @@
+= WildFly Testing Tools
+:author: WildFly Team
+:email: wildfly-dev@lists.jboss.org
+:version-label: Version
+:doctype: book
+:license: Apache License v2.0
+:source-highlighter: highlight.js
+:highlightjs-theme: github
+:toc: left
+:toclevels: 2
+:sectnums:
+:icons: font
+:experimental:
+
+// Project-specific attributes
+:javadoc-url: apidocs
+:plugin-tools-javadoc-url: https://docs.wildfly.org/wildfly-plugin-tools
+
+[abstract]
+== Abstract
+
+WildFly Testing Tools is a comprehensive testing framework for applications running on WildFly application server. It
+consists of three independent sub-projects that work together to simplify Jakarta EE and WildFly testing with JUnit.
+
+IMPORTANT: This is not a replacement for Arquillian. These tools are WildFly-specific and designed for simpler, focused WildFly testing scenarios.
+
+== Quick Start
+
+Choose the module(s) you need:
+
+* **Just need conditional tests?** → Use link:api/[WildFly JUnit API]
+* **Need full server lifecycle management?** → Use link:extension/[WildFly JUnit Extension]
+* **Need deployment utilities?** → Use link:tools/[WildFly Testing Tools]
+
+Most users will want the **Extension** module, which includes full server management, deployment handling, and resource injection.
+
+=== Maven Dependencies
+
+[source,xml]
+----
+<dependencies>
+    <!-- Full testing framework with server lifecycle -->
+    <dependency>
+        <groupId>org.wildfly.testing</groupId>
+        <artifactId>wildfly-junit-extension</artifactId>
+        <version>${version.org.wildfly.testing}</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- Optional: Deployment utilities -->
+    <dependency>
+        <groupId>org.wildfly.testing</groupId>
+        <artifactId>wildfly-testing-tools</artifactId>
+        <version>${version.org.wildfly.testing}</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+----
+
+== Modules Overview
+
+=== link:api/[WildFly JUnit API]
+
+**Artifact:** `wildfly-junit-api`
+
+Provides annotations for conditional test execution based on WildFly configuration:
+
+* `@RequiresModule` - Skip tests when WildFly modules aren't available
+* `@AnyOf` - Run tests if any of multiple requirements are met
+* `@JBossHome` - Inject WildFly installation directory
+
+**Use when:** You need conditional tests but manage the server yourself or use another framework like Arquillian.
+
+link:api/[Read API Documentation →]
+
+=== link:extension/[WildFly JUnit Extension]
+
+**Artifact:** `wildfly-junit-extension`
+
+Full-featured JUnit extension that automatically manages WildFly server lifecycle:
+
+* Automatic server startup and shutdown
+* Per-test deployment management
+* Resource injection (`ServerManager`, `URI`)
+* Domain mode support
+* Manual lifecycle control when needed
+* Custom resource producers via SPI
+
+**Use when:** You want comprehensive WildFly testing with minimal boilerplate.
+
+link:extension/[Read Extension Documentation →]
+
+=== link:tools/[WildFly Testing Tools]
+
+**Artifact:** `wildfly-testing-tools`
+
+Utilities for creating deployment descriptors and managing modules:
+
+* `DeploymentDescriptors` - Create `jboss-web.xml`, `jboss-deployment-structure.xml`, `permissions.xml`
+* `ModuleBuilder` - Build custom WildFly modules programmatically
+
+**Use when:** You need deployment utilities with any testing framework (JUnit, TestNG, Arquillian).
+
+link:tools/[Read Tools Documentation →]
+
+== Example Usage
+
+=== Basic Test with Extension
+
+[source,java]
+----
+@WildFlyTest
+public class HelloWorldTest {
+
+    @DeploymentProducer
+    public static WebArchive createDeployment() {
+        return ShrinkWrap.create(WebArchive.class)
+                .addClass(HelloServlet.class);
+    }
+
+    @Test
+    public void testHello(@ServerResource URI uri) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri.resolve("hello"))
+                .build();
+        HttpResponse<String> response = client.send(request,
+                HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(200, response.statusCode());
+    }
+}
+----
+
+=== Conditional Testing with API
+
+[source,java]
+----
+@RequiresModule("org.jboss.as.ejb3")
+@RequiresModule("org.jboss.as.jpa")
+public class EjbJpaTest {
+    @Test
+    public void testEjbWithJpa() {
+        // Only runs if both EJB and JPA modules are available
+    }
+}
+----
+
+=== Using Testing Tools
+
+[source,java]
+----
+Asset deploymentStructure = DeploymentDescriptors.createJBossDeploymentStructure(
+    Set.of("org.jboss.logging"),
+    Set.of()
+);
+war.addAsManifestResource(deploymentStructure, "jboss-deployment-structure.xml");
+----
+
+== Documentation
+
+=== Module Documentation
+
+* link:api/[WildFly JUnit API] - Conditional test annotations
+* link:extension/[WildFly JUnit Extension] - Server lifecycle and resource injection
+* link:tools/[WildFly Testing Tools] - Deployment and module utilities
+
+=== Additional Resources
+
+* link:examples.html[Real-World Examples] - REST, JPA, Security, and EJB testing examples
+* link:troubleshooting.html[Troubleshooting Guide] - Common issues and solutions
+* link:{javadoc-url}/[JavaDoc API Documentation]
+
+== Architecture
+
+The three sub-projects work together as follows:
+
+* **API** can be used standalone or with any framework (including Arquillian)
+* **Extension** depends on API and optionally uses Tools
+* **Tools** is completely independent and works with any framework
+
+[appendix]
+== Frequently Asked Questions
+
+=== General Questions
+
+**Q: Is this a replacement for Arquillian?**
+
+A: No. This framework is WildFly-specific and simpler than Arquillian. Use Arquillian if you need multi-container support
+or advanced features. Use this framework for WildFly-only testing with less setup overhead.
+
+**Q: Can I run tests in parallel?**
+
+A: In some cases, yes. If you modify the server configuration or use manual mode testing, it's highly suggested you do
+not use parallel execution. In other cases it should work.
+
+**Q: How do I specify which WildFly installation to use?**
+
+A: Set the `jboss.home` system property or `JBOSS_HOME` environment variable. See link:extension/index.html#configuration-properties-reference[Extension Configuration] for all available properties.
+
+**Q: How do I enable debug logging?**
+
+A: Set the `org.wildfly.testing` logger to DEBUG/FINE level in your logging framework. See link:troubleshooting.html[Troubleshooting] for complete examples.
+
+[appendix]
+== Glossary
+
+[glossary]
+Deployment::
+A packaged application (WAR, EAR, JAR, RAR) that is deployed to WildFly for testing. Created using ShrinkWrap.
+
+Domain Mode::
+WildFly's clustered configuration mode where a domain controller manages multiple server instances across server groups.
+
+Manual Mode::
+A testing mode (enabled with `@ManualMode`) where the test controls server lifecycle instead of the framework.
+
+ServerManager::
+The main API for controlling and interacting with a WildFly server instance during tests.
+
+[appendix]
+== Related Documentation
+
+* link:{javadoc-url}/index.html[JavaDoc API Documentation] - Complete API reference for all three sub-projects
+* link:{plugin-tools-javadoc-url}[WildFly Plugin Tools] - ServerManager API documentation
+* https://docs.wildfly.org[WildFly Project] - WildFly application server documentation
+* https://junit.org/[JUnit Documentation] - JUnit user guide
+* https://github.com/shrinkwrap/shrinkwrap[ShrinkWrap] - Java API for creating archives
