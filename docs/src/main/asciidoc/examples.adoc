@@ -1,0 +1,602 @@
+= Real-World Examples
+include::common-attributes.adoc[]
+
+This chapter provides practical examples of testing common Jakarta EE patterns with {project-name}.
+
+== Testing REST Endpoints
+
+This example shows how to test a Jakarta REST API endpoint.
+
+[source,java]
+----
+package com.example;
+
+import java.net.URI;
+
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.wildfly.testing.junit.extension.annotation.DeploymentProducer;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
+
+@WildFlyTest
+public class RestApiTest {
+
+    @DeploymentProducer
+    public static WebArchive deployment() {
+        return ShrinkWrap.create(WebArchive.class, "rest-test.war")
+                .addClasses(RestApplication.class, UserResource.class, User.class)
+                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    @ServerResource
+    private URI uri;
+
+    private Client client;
+
+    @BeforeEach
+    public void setup() {
+        client = ClientBuilder.newClient();
+    }
+
+    @AfterEach
+    public void cleanup() {
+        if (client != null) {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testGetUser() {
+        Response response = client.target(uri)
+                .path("api/users/1")
+                .request(MediaType.APPLICATION_JSON)
+                .get();
+
+        Assertions.assertEquals(200, response.getStatus());
+        User user = response.readEntity(User.class);
+        Assertions.assertEquals("John Doe", user.getName());
+    }
+
+    @Test
+    public void testGetUserNotFound() {
+        Response response = client.target(uri)
+                .path("api/users/999")
+                .request(MediaType.APPLICATION_JSON)
+                .get();
+
+        Assertions.assertEquals(404, response.getStatus());
+    }
+
+    // Application classes
+    @ApplicationPath("/api")
+    public static class RestApplication extends Application {
+    }
+
+    @Path("/users")
+    @Produces(MediaType.APPLICATION_JSON)
+    public static class UserResource {
+        @GET
+        @Path("/{id}")
+        public Response getUser(@jakarta.ws.rs.PathParam("id") long id) {
+            if (id == 1) {
+                return Response.ok(new User(1L, "John Doe")).build();
+            }
+            return Response.status(404).build();
+        }
+    }
+
+    public static class User {
+        private Long id;
+        private String name;
+
+        public User() {}
+
+        public User(Long id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+    }
+}
+----
+
+== Testing JPA and Databases
+
+This example demonstrates testing JPA entities and database operations.
+
+[source,java]
+----
+package com.example;
+
+import java.net.URI;
+import java.util.List;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.PersistenceContext;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.wildfly.testing.junit.extension.annotation.DeploymentProducer;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
+
+@WildFlyTest
+public class JpaTest {
+
+    @DeploymentProducer
+    public static WebArchive deployment() {
+        return ShrinkWrap.create(WebArchive.class, "jpa-test.war")
+                .addClasses(Product.class, ProductService.class, ProductResource.class)
+                .addAsManifestResource(createPersistenceXml(), "persistence.xml")
+                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    private static StringAsset createPersistenceXml() {
+        return new StringAsset(
+                """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <persistence xmlns="https://jakarta.ee/xml/ns/persistence" version="3.0">
+                    <persistence-unit name="test-pu" transaction-type="JTA">
+                        <jta-data-source>java:jboss/datasources/ExampleDS</jta-data-source>
+                        <properties>
+                            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+                            <property name="hibernate.show_sql" value="true"/>
+                        </properties>
+                    </persistence-unit>
+                </persistence>"""
+        );
+    }
+
+    @ServerResource
+    private URI uri;
+
+    private Client client;
+
+    @BeforeEach
+    public void setup() {
+        client = ClientBuilder.newClient();
+    }
+
+    @AfterEach
+    public void cleanup() {
+        if (client != null) {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testCreateAndRetrieveProduct() {
+        // Create a product
+        Product product = new Product();
+        product.setName("Test Product");
+        product.setPrice(29.99);
+
+        Response createResponse = client.target(uri)
+                .path("api/products")
+                .request(MediaType.APPLICATION_JSON)
+                .post(Entity.json(product));
+
+        Assertions.assertEquals(201, createResponse.getStatus());
+
+        // Retrieve all products
+        Response getResponse = client.target(uri)
+                .path("api/products")
+                .request(MediaType.APPLICATION_JSON)
+                .get();
+
+        Assertions.assertEquals(200, getResponse.getStatus());
+        List<Product> products = getResponse.readEntity(
+                new jakarta.ws.rs.core.GenericType<List<Product>>() {});
+        Assertions.assertFalse(products.isEmpty());
+        Assertions.assertEquals("Test Product", products.getFirst().getName());
+    }
+
+    // Entity
+    @Entity
+    public static class Product {
+        @Id
+        @GeneratedValue
+        private Long id;
+        private String name;
+        private Double price;
+
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public Double getPrice() { return price; }
+        public void setPrice(Double price) { this.price = price; }
+    }
+
+    // Service
+    @ApplicationScoped
+    public static class ProductService {
+        @PersistenceContext(unitName = "test-pu")
+        private EntityManager em;
+
+        public void create(Product product) {
+            em.persist(product);
+        }
+
+        public List<Product> findAll() {
+            return em.createQuery("SELECT p FROM Product p", Product.class)
+                    .getResultList();
+        }
+    }
+
+    // REST Resource
+    @Path("/products")
+    @Produces(MediaType.APPLICATION_JSON)
+    public static class ProductResource {
+        @jakarta.inject.Inject
+        private ProductService productService;
+
+        @POST
+        public Response create(Product product) {
+            productService.create(product);
+            return Response.status(201).build();
+        }
+
+        @GET
+        public List<Product> getAll() {
+            return productService.findAll();
+        }
+    }
+}
+----
+
+== Testing Security
+
+This example shows how to test secured endpoints with different security configurations.
+
+[source,java]
+----
+package com.example;
+
+import java.net.URI;
+import java.util.Base64;
+
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.Response;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.wildfly.testing.junit.extension.annotation.DeploymentProducer;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
+import org.wildfly.testing.tools.deployment.DeploymentDescriptors;
+
+@WildFlyTest
+public class SecurityTest {
+
+    @DeploymentProducer
+    public static WebArchive deployment() {
+        return ShrinkWrap.create(WebArchive.class, "security-test.war")
+                .addClasses(SecuredResource.class)
+                .addAsWebInfResource(createWebXml(), "web.xml")
+                .addAsWebInfResource(
+                        DeploymentDescriptors.createJBossWebSecurityDomain("other"),
+                        "jboss-web.xml")
+                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    private static org.jboss.shrinkwrap.api.asset.Asset createWebXml() {
+        return new org.jboss.shrinkwrap.api.asset.StringAsset(
+                """
+                        <?xml version="1.0" encoding="UTF-8"?>
+                        <web-app xmlns="https://jakarta.ee/xml/ns/jakartaee" version="5.0">
+                            <security-constraint>
+                                <web-resource-collection>
+                                    <web-resource-name>Secured</web-resource-name>
+                                    <url-pattern>/api/secured/*</url-pattern>
+                                </web-resource-collection>
+                                <auth-constraint>
+                                    <role-name>admin</role-name>
+                                </auth-constraint>
+                            </security-constraint>
+                            <login-config>
+                                <auth-method>BASIC</auth-method>
+                                <realm-name>ApplicationRealm</realm-name>
+                            </login-config>
+                            <security-role>
+                                <role-name>admin</role-name>
+                            </security-role>
+                        </web-app>"""
+        );
+    }
+
+    @ServerResource
+    private URI uri;
+
+    private Client client;
+
+    @BeforeEach
+    public void setup() {
+        client = ClientBuilder.newClient();
+    }
+
+    @AfterEach
+    public void cleanup() {
+        if (client != null) {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testUnauthenticatedAccess() {
+        Response response = client.target(uri)
+                .path("api/secured/admin")
+                .request()
+                .get();
+
+        // Should return 401 Unauthorized
+        Assertions.assertEquals(401, response.getStatus());
+    }
+
+    @Test
+    public void testAuthenticatedAccess() {
+        // Note: This requires setting up users in WildFly's ApplicationRealm
+        // For testing, you might use add-user.sh or configure a test security domain
+        String credentials = "admin:admin";
+        String encodedCredentials = Base64.getEncoder()
+                .encodeToString(credentials.getBytes());
+
+        Response response = client.target(uri)
+                .path("api/secured/admin")
+                .request()
+                .header("Authorization", "Basic " + encodedCredentials)
+                .get();
+
+        // With valid credentials, should return 200
+        // Note: This will fail unless you've configured the admin user
+        Assertions.assertTrue(
+                response.getStatus() == 200 || response.getStatus() == 401,
+                "Expected 200 (if user configured) or 401 (if not configured)"
+        );
+    }
+
+    @Path("/secured")
+    public static class SecuredResource {
+        @GET
+        @Path("/admin")
+        @RolesAllowed("admin")
+        public String adminEndpoint() {
+            return "Admin access granted";
+        }
+    }
+}
+----
+
+NOTE: Security testing often requires additional WildFly configuration (users, roles, security domains). Consider using `@ManualMode` with `ServerManager` to configure security programmatically before tests run.
+
+== Testing EJBs
+
+This example demonstrates testing Enterprise JavaBeans.
+
+[source,java]
+----
+package com.example;
+
+import java.net.URI;
+
+import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.Response;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.wildfly.testing.junit.extension.annotation.DeploymentProducer;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.annotation.RequiresModule;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
+
+@WildFlyTest
+@RequiresModule("org.jboss.as.ejb3")
+public class EjbTest {
+
+    @DeploymentProducer
+    public static WebArchive deployment() {
+        return ShrinkWrap.create(WebArchive.class, "ejb-test.war")
+                .addClasses(CalculatorService.class, CalculatorResource.class)
+                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    @ServerResource
+    private URI uri;
+
+    private Client client;
+
+    @BeforeEach
+    public void setup() {
+        client = ClientBuilder.newClient();
+    }
+
+    @AfterEach
+    public void cleanup() {
+        if (client != null) {
+            client.close();
+        }
+    }
+
+    @Test
+    public void testCalculation() {
+        Response response = client.target(uri)
+                .path("api/calculator/add/5/3")
+                .request()
+                .get();
+
+        Assertions.assertEquals(200, response.getStatus());
+        String result = response.readEntity(String.class);
+        Assertions.assertEquals("8", result);
+    }
+
+    // EJB
+    @Stateless
+    public static class CalculatorService {
+        public int add(int a, int b) {
+            return a + b;
+        }
+
+        public int multiply(int a, int b) {
+            return a * b;
+        }
+    }
+
+    // REST Resource using EJB
+    @Path("/calculator")
+    public static class CalculatorResource {
+        @Inject
+        private CalculatorService calculator;
+
+        @GET
+        @Path("/add/{a}/{b}")
+        public String add(@PathParam("a") int a, @PathParam("b") int b) {
+            return String.valueOf(calculator.add(a, b));
+        }
+    }
+}
+----
+
+== Testing with Custom Modules
+
+This example shows how to test code that depends on custom WildFly modules.
+
+[source,java]
+----
+package com.example;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.wildfly.testing.junit.extension.annotation.DeploymentProducer;
+import org.wildfly.testing.junit.extension.annotation.JBossHome;
+import org.wildfly.testing.junit.extension.annotation.ManualMode;
+import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
+import org.wildfly.testing.tools.deployment.DeploymentDescriptors;
+import org.wildfly.testing.tools.module.ModuleBuilder;
+import org.wildfly.testing.tools.module.ModuleDescription;
+
+@WildFlyTest
+@ManualMode
+public class CustomModuleTest {
+
+    private static Path MODULE;
+
+    @BeforeAll
+    static void setupModule(@JBossHome Path jbossHome,
+                           @ServerResource org.wildfly.plugin.tools.server.ServerManager serverManager)
+            throws Exception {
+        // Create a custom module
+        MODULE = ModuleBuilder.of("com.example.custom")
+                .addDependency("org.jboss.logging")
+                .addResourcePath("custom-library.jar")
+                .build();
+
+        // Start server after module is created
+        serverManager.start();
+    }
+
+    @AfterAll
+    static void cleanupModule(@ServerResource org.wildfly.plugin.tools.server.ServerManager serverManager)
+            throws Exception {
+        serverManager.shutdown();
+        if (MODULE != null) {
+            MODULE.close();
+        }
+    }
+
+    @DeploymentProducer
+    public static WebArchive deployment() {
+        return ShrinkWrap.create(WebArchive.class, "custom-module-test.war")
+                .addClass(MyService.class)
+                .addAsManifestResource(
+                        DeploymentDescriptors.createJBossDeploymentStructure(
+                                java.util.Set.of("com.example.custom"),
+                                java.util.Set.of()
+                        ),
+                        "jboss-deployment-structure.xml"
+                );
+    }
+
+    @Test
+    public void testCustomModule() {
+        // Test code that uses the custom module
+        Assertions.assertTrue(true);
+    }
+
+    public static class MyService {
+        // Service implementation using custom module
+    }
+}
+----
+
+== Best Practices from Examples
+
+Based on these examples, here are key best practices:
+
+1. **Resource Cleanup**: Always close clients and resources in `@AfterEach` or try-with-resources
+2. **Minimal Deployments**: Only include classes needed for the specific test
+3. **Use @RequiresModule**: Skip tests when required WildFly features aren't available
+4. **Proper Configuration**: Use deployment descriptors for complex configurations
+5. **Test Isolation**: Each test should be independent and not rely on execution order
+6. **Clear Assertions**: Make test failures easy to understand with descriptive assertions

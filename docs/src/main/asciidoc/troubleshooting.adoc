@@ -1,0 +1,82 @@
+= Troubleshooting Guide
+include::common-attributes.adoc[]
+:toclevels: 2
+
+This guide covers common issues when using WildFly Testing Tools. For module-specific troubleshooting, see:
+
+* link:extension/troubleshooting.html[Extension Troubleshooting] - Server startup, deployment, and lifecycle issues
+
+== Debug Logging
+
+Enabling debug logging is often the first step in troubleshooting issues.
+
+=== JBoss Log Manager
+
+If using the JBoss Log Manager, add to `src/test/resources/logging.properties`:
+
+[source,properties]
+----
+loggers=org.wildfly.testing,org.jboss.as.controller.client
+
+logger.level=INFO
+logger.handlers=FILE,CONSOLE
+# Enable framework debug logging
+logger.org.wildfly.testing.level=${test.log.level:DEBUG}
+
+# Enable WildFly client logging
+logger.org.jboss.as.controller.client.level=${test.log.level:DEBUG}
+
+handler.CONSOLE=org.jboss.logmanager.handlers.ConsoleHandler
+handler.CONSOLE.formatter=COLOR-PATTERN
+handler.CONSOLE.properties=autoFlush,target
+handler.CONSOLE.autoFlush=true
+handler.CONSOLE.target=SYSTEM_OUT
+
+handler.FILE=org.jboss.logmanager.handlers.FileHandler
+handler.FILE.formatter=PATTERN
+handler.FILE.properties=autoFlush,append,fileName
+handler.FILE.constructorProperties=fileName,append
+handler.FILE.autoFlush=true
+handler.FILE.append=true
+handler.FILE.fileName=${client.log.dir}/tck-client.log
+
+formatter.COLOR-PATTERN=org.jboss.logmanager.formatters.ColorPatternFormatter
+formatter.COLOR-PATTERN.properties=pattern
+formatter.COLOR-PATTERN.pattern=[client] %d{HH\:mm\:ss,SSS} %-5p [%c] (%t) %s%e%n
+
+formatter.PATTERN=org.jboss.logmanager.formatters.PatternFormatter
+formatter.PATTERN.properties=pattern
+formatter.PATTERN.pattern=%d{yyyy-MM-dd'T'HH\:mm\:ss,SSS} %-5p [%c] (%t) %s%e%n
+----
+
+=== Other Logging Frameworks
+
+For Log4j2, Logback, or Java Util Logging, configure the `org.wildfly.testing` and `org.jboss.as.controller.client` loggers at DEBUG level according to your logging framework's configuration format.
+
+== Remote Debugging
+
+Debug WildFly during tests:
+
+[source,bash]
+----
+mvn test -Dwildfly.jvm.args="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
+----
+
+Then attach your IDE's debugger to port 8787. Set `suspend=n` if you don't want WildFly to wait for the debugger before starting.
+
+== Module-Specific Issues
+
+For issues specific to each module, consult the module documentation:
+
+* link:api/[API Documentation] - @RequiresModule, @AnyOf, @JBossHome issues
+* link:extension/troubleshooting.html[Extension Troubleshooting] - Comprehensive troubleshooting for server lifecycle, deployments, and domain mode
+* link:tools/[Tools Documentation] - DeploymentDescriptors and ModuleBuilder usage
+
+== Getting Help
+
+If you're still experiencing problems:
+
+1. Check the https://github.com/wildfly-extras/wildfly-testing-tools/issues[GitHub Issues] for known problems
+2. Review the JavaDoc API documentation
+3. Ask for help on the https://wildfly.zulipchat.com/[WildFly Zulip Chat]
+4. Report bugs at https://github.com/wildfly-extras/wildfly-testing-tools/issues/new[GitHub]

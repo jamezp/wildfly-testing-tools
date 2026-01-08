@@ -1,0 +1,836 @@
+= WildFly JUnit Extension
+include::common-attributes.adoc[]
+:project-name: WildFly JUnit Extension
+
+[abstract]
+== Abstract
+
+The WildFly JUnit Extension module (`wildfly-junit-extension`) provides the core testing framework with automatic server
+lifecycle management, deployment handling, and resource injection. It integrates with JUnit to provide a seamless
+testing experience for WildFly-based applications.
+
+== Overview
+
+The extension automatically manages:
+
+* **Server Lifecycle** - Starts WildFly once before tests, stops after completion
+* **Deployments** - Manages per-test deployments and undeployments
+* **Resource Injection** - Injects server resources into test fields and parameters
+* **Domain Mode** - Supports testing on domain controllers
+* **Manual Control** - Optional manual server lifecycle management
+
+== Getting Started
+
+=== Maven Dependency
+
+Add the extension module to your test dependencies:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.wildfly.testing</groupId>
+    <artifactId>wildfly-junit-extension</artifactId>
+    <version>${version.org.wildfly.testing}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+=== Requirements
+
+* Java 17 or later
+* JUnit 6.0 or later
+* WildFly 27 or later
+* WildFly installation accessible via `jboss.home` property or `JBOSS_HOME` environment variable
+
+=== Basic Example
+
+[source,java]
+----
+@WildFlyTest
+public class HelloWorldTest {
+
+    @DeploymentProducer
+    public static WebArchive createDeployment() {
+        return ShrinkWrap.create(WebArchive.class)
+                .addClass(HelloServlet.class);
+    }
+
+    @Test
+    public void testHello(@ServerResource URI uri) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri.resolve("hello"))
+                .build();
+        HttpResponse<String> response = client.send(request, 
+                HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(200, response.statusCode());
+    }
+}
+----
+
+
+The `@WildFlyTest` annotation marks a test class that requires a WildFly server.
+
+[source,java]
+----
+@WildFlyTest
+public class MyTest {
+    @Test
+    public void test() {
+        // WildFly server is automatically started
+    }
+}
+----
+
+== Creating Deployments
+
+=== @DeploymentProducer
+
+Use `@DeploymentProducer` to create a deployment that returns an archive:
+
+[source,java]
+----
+@WildFlyTest
+public class DeploymentTest {
+
+    @DeploymentProducer
+    public static WebArchive deployment() {
+        return ShrinkWrap.create(WebArchive.class, "test.war")
+                .addClass(TestServlet.class)
+                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    @Test
+    public void test() {
+        // Test against deployed application
+    }
+}
+----
+
+=== @GenerateDeployment
+
+Use `@GenerateDeployment` to create an empty archive which is inferred from the argument type:
+
+[source,java]
+----
+@WildFlyTest
+public class GenerateTest {
+
+    @GenerateDeployment
+    public static void generate(final WebArchive war) {
+        war.addClass(TestServlet.class)
+           .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    @Test
+    public void test() {
+        // Test implementation
+    }
+}
+----
+
+The name for the deployment will be the name of the test class, `Class.getSimpleName()`, and the appropriate extension.
+In the above example, the deployment name would be `GenerateTest.war`.
+
+IMPORTANT: A test can have either `@GenerateDeployment` or `@DeploymentProducer`, but not both.
+
+== Resource Injection
+
+=== @ServerResource
+
+Inject server resources into test fields or parameters:
+
+[source,java]
+----
+@WildFlyTest
+public class ResourceTest {
+
+    @ServerResource
+    private ServerManager serverManager;
+
+    @ServerResource
+    private URI uri;
+
+    @Test
+    public void test() {
+        Assertions.assertTrue(serverManager.isRunning());
+        Assertions.assertNotNull(uri);
+    }
+}
+----
+
+[#available-resources]
+=== Available Resources
+
+* `org.wildfly.plugin.tools.server.ServerManager` - Server management interface
+* `java.net.URI` - HTTP URI to deployed application
+* `org.jboss.as.controller.client.ModelControllerClient` - A client which can talk to the management endpoint of the server
+* `org.wildfly.plugin.tools.DeploymentManager` - A deployment manager to deploy archives to the server
+
+IMPORTANT: When injecting a `ServerManager` the `start()` and `shutdown()` methods will throw an exception if the test
+is not a <<manualmode>>[`@ManualMode`] test.
+
+== Server Lifecycle
+
+=== Automatic Mode (Default)
+
+By default, the extension:
+
+1. Starts WildFly before the first test
+2. Keeps it running for all tests
+3. Deploys/undeploys applications per test
+4. Stops the server after all tests complete
+
+[#manualmode]
+=== @ManualMode
+
+Take control of the server lifecycle:
+
+[source,java]
+----
+@WildFlyTest
+@ManualMode
+public class ManualTest {
+
+    @ServerResource
+    private static ServerManager serverManager;  // Must be static for @BeforeAll/@AfterAll
+
+    @BeforeAll
+    static void startServer() {
+        serverManager.start();
+    }
+
+    @AfterAll
+    static void stopServer() {
+        serverManager.shutdown();
+    }
+
+    @Test
+    public void test() {
+        // Test with running server
+        Assertions.assertTrue(serverManager.isRunning());
+    }
+}
+----
+
+== Domain Mode
+
+Test deployments on a domain controller:
+
+[source,java]
+----
+@WildFlyTest
+@Domain("main-server-group")
+public class DomainTest {
+
+    @DeploymentProducer
+    public static WebArchive deployment() {
+        return ShrinkWrap.create(WebArchive.class)
+                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
+    }
+
+    @ServerResource
+    @DomainServer("server-one")
+    private URI uri;
+
+    @Test
+    public void test() {
+        // Test against domain deployment
+    }
+}
+----
+
+=== Domain Mode Requirements
+
+To use domain mode testing:
+
+1. **Know your server group name** - Check `domain.xml` for available server groups:
++
+[source,xml]
+----
+<server-groups>
+    <server-group name="main-server-group" profile="full">
+        <!-- ... -->
+    </server-group>
+</server-groups>
+----
+
+2. **Know your server names** - Check `host.xml` for servers in the group:
++
+[source,xml]
+----
+<servers>
+    <server name="server-one" group="main-server-group">
+        <!-- ... -->
+    </server>
+</servers>
+----
+
+3. **Use the correct annotations**:
+   - `@Domain("server-group-name")` on the test class (you can specify multiple server groups: `@Domain({"group1", "group2"})`)
+   - `@DomainServer("server-name")` on `@ServerResource` fields to target specific servers
+
+NOTE: Domain tests are automatically tagged with `@Tag("domain-test")`. You can use this to run domain tests separately: `mvn test -Dgroups=domain-test`
+
+== ServerManager API
+
+The `ServerManager` interface provides methods for controlling and querying the WildFly server:
+
+=== Lifecycle Methods
+
+[source,java]
+----
+// Start the server
+serverManager.start();
+
+// Check if server is running
+boolean running = serverManager.isRunning();
+
+// Shutdown the server
+serverManager.shutdown();
+
+// Kill the server process (forceful)
+serverManager.kill();
+----
+
+=== Deployment Operations
+
+[source,java]
+----
+// Deploy an archive
+DeploymentResult result = serverManager.deploy(archive);
+
+// Undeploy by name
+serverManager.undeploy(deploymentName);
+
+// Redeploy
+serverManager.redeploy(archive);
+----
+
+=== Management Operations
+
+Execute management operations using the WildFly management API:
+
+[source,java]
+----
+// Read an attribute
+ModelNode op = Operations.createReadAttributeOperation(
+    Operations.createAddress("subsystem", "logging"),
+    "add-logging-api-dependencies"
+);
+ModelNode result = serverManager.executeOperation(op);
+
+// Write an attribute
+op = Operations.createWriteAttributeOperation(
+    Operations.createAddress("system-property", "my.property"),
+    "value",
+    "my-value"
+);
+serverManager.executeOperation(op);
+----
+
+=== Server Control
+
+[source,java]
+----
+// Reload the server
+serverManager.reload();
+
+// Wait for server to be ready
+serverManager.waitFor(30, TimeUnit.SECONDS);
+
+// Take a configuration snapshot
+String snapshotName = serverManager.takeSnapshot();
+----
+
+TIP: See the link:{plugin-tools-javadoc-url}/org/wildfly/plugin/tools/server/ServerManager.html[ServerManager JavaDoc] for the complete API reference.
+
+This chapter covers all configuration options for {project-name}.
+
+== Configuration Properties Reference
+
+[cols="1,1,2,1", options="header"]
+|===
+|Property |Type |Description |Default
+
+|`jboss.home`
+|Path
+|WildFly installation directory
+|`$JBOSS_HOME` env var
+
+|`wildfly.java.home`
+|Path
+|Java Runtime Environment path
+|Current JVM (`java.home`)
+
+|`wildfly.module.path`
+|Path
+|JBoss Modules path
+|`${jboss.home}/modules`
+
+|`wildfly.timeout`
+|Integer (seconds)
+|Server startup/shutdown timeout
+|`60`
+
+|`wildfly.http.protocol`
+|String
+|HTTP protocol
+|`http`
+
+|`wildfly.http.host`
+|String
+|HTTP host
+|`localhost`
+
+|`wildfly.http.port`
+|Integer
+|HTTP port
+|`8080`
+
+|`wildfly.management.port`
+|Integer
+|Management port
+|`9990`
+
+|`wildfly.jvm.args`
+|String
+|Additional JVM arguments for WildFly
+|None
+|===
+
+== System Properties
+
+Configuration can be set via system properties or JUnit Platform configuration parameters.
+
+=== Server Location
+
+`jboss.home`::
+The path to the WildFly installation directory. If not set, falls back to the `JBOSS_HOME` environment variable, then `jboss.home.dir` property.
++
+[source,bash]
+----
+mvn test -Djboss.home=/opt/wildfly
+----
+
+=== Java Runtime
+
+`wildfly.java.home`::
+Path to a different Java Runtime Environment. Defaults to the current JVM (`java.home`).
++
+[source,bash]
+----
+mvn test -Dwildfly.java.home=/usr/lib/jvm/java-21
+----
+
+=== Module Path
+
+`wildfly.module.path`::
+Alternate module path for JBoss Modules. Defaults to `${jboss.home}/modules`.
++
+[source,bash]
+----
+mvn test -Dwildfly.module.path=/custom/modules
+----
+
+=== Timeouts
+
+`wildfly.timeout`::
+Timeout in seconds for server startup and shutdown operations. Default: `60`.
++
+[source,bash]
+----
+mvn test -Dwildfly.timeout=120
+----
+
+=== HTTP Configuration
+
+`wildfly.http.protocol`::
+Protocol for HTTP connections. Default: `http`.
+
+`wildfly.http.host`::
+Host for HTTP connections. Default: `localhost`.
+
+`wildfly.http.port`::
+Port for HTTP connections. Default: `8080`.
+
+[source,bash]
+----
+mvn test -Dwildfly.http.port=8180
+----
+
+== JUnit Configuration
+
+Properties can also be set in `junit-platform.properties`:
+
+[source,properties]
+----
+jboss.home=/opt/wildfly
+wildfly.timeout=120
+wildfly.http.port=8080
+----
+
+== Maven Configuration
+
+Configure properties in your `pom.xml`:
+
+[source,xml]
+----
+<properties>
+    <jboss.home>${project.build.directory}/wildfly</jboss.home>
+    <wildfly.timeout>120</wildfly.timeout>
+</properties>
+----
+
+== Configuration Examples
+
+=== Local Development
+
+For local development with a standard WildFly installation:
+
+[source,properties]
+----
+# src/test/resources/junit-platform.properties
+jboss.home=/opt/wildfly-38.0.1.Final
+wildfly.timeout=60
+----
+
+=== CI/CD Pipeline
+
+For continuous integration with provisioned server:
+
+[source,xml]
+----
+<!-- pom.xml -->
+<properties>
+    <jboss.home>${project.build.directory}/wildfly</jboss.home>
+    <wildfly.timeout>180</wildfly.timeout>
+</properties>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+                <systemPropertyVariables>
+                    <jboss.home>${jboss.home}</jboss.home>
+                    <wildfly.timeout>${wildfly.timeout}</wildfly.timeout>
+                </systemPropertyVariables>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+----
+
+=== Custom Ports
+
+When default ports are unavailable:
+
+[source,bash]
+----
+mvn test \
+  -Dwildfly.http.port=8180 \
+  -Dwildfly.management.port=10090
+----
+
+Or in `junit-platform.properties`:
+
+[source,properties]
+----
+wildfly.http.port=8180
+wildfly.management.port=10090
+----
+
+=== Remote Debugging
+
+Enable remote debugging of WildFly during tests:
+
+[source,bash]
+----
+mvn test -Dwildfly.jvm.args="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
+----
+
+Then attach your IDE debugger to port 8787.
+
+=== Different Java Version
+
+Test with a specific Java version:
+
+[source,bash]
+----
+mvn test -Dwildfly.java.home=/usr/lib/jvm/java-21-openjdk
+----
+
+== Test-Specific Configuration
+
+Override configuration in individual tests using `@TestPropertySource` or similar JUnit mechanisms.
+
+== WildFly Provisioning
+
+When using the wildfly-maven-plugin to provision a server:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-maven-plugin</artifactId>
+    <executions>
+        <execution>
+            <goals>
+                <goal>provision</goal>
+            </goals>
+            <configuration>
+                <provisioning-dir>${project.build.directory}/wildfly</provisioning-dir>
+                <feature-packs>
+                    <feature-pack>
+                        <groupId>org.wildfly</groupId>
+                        <artifactId>wildfly-ee-galleon-pack</artifactId>
+                        <version>${version.wildfly}</version>
+                    </feature-pack>
+                </feature-packs>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+Set `jboss.home` to the provisioning directory:
+
+[source,xml]
+----
+<properties>
+    <jboss.home>${project.build.directory}/wildfly</jboss.home>
+</properties>
+----
+
+
+This chapter covers advanced features and extensibility points in {project-name}.
+
+== Extending Resource Injection
+
+The framework supports custom resource injection via the `ServerResourceProducer` SPI.
+
+=== Implementing a Resource Producer
+
+Create a class that implements `org.wildfly.testing.junit.extension.api.ServerResourceProducer`:
+
+[source,java]
+----
+package com.example;
+
+import java.lang.annotation.Annotation;
+
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.kohsuke.MetaInfServices;
+import org.wildfly.testing.junit.extension.api.ServerResourceProducer;
+
+@MetaInfServices
+public class RestClientProducer implements ServerResourceProducer {
+
+    private static final ExtensionContext.Namespace NAMESPACE =
+            ExtensionContext.Namespace.create("Rest.Client");
+
+    @Override
+    public boolean canInject(ExtensionContext context, Class<?> clazz,
+                            Annotation... annotations) {
+        return Client.class.isAssignableFrom(clazz);
+    }
+
+    @Override
+    public Object produce(ExtensionContext context, Class<?> clazz,
+                         Annotation... annotations) {
+        ExtensionContext.Store store = context.getRoot().getStore(NAMESPACE);
+        return store.computeIfAbsent("rest-client",
+                (c) -> ClientBuilder.newClient(), Client.class);
+    }
+}
+----
+
+=== Using the Custom Producer
+
+Now you can inject the custom resource type:
+
+[source,java]
+----
+@WildFlyTest
+public class RestApiTest {
+
+    @ServerResource
+    private Client client;
+
+    @ServerResource
+    private URI uri;
+
+    @Test
+    public void testRestApi() {
+        Response response = client.target(uri)
+                .path("api/resource")
+                .request()
+                .get();
+        Assertions.assertEquals(200, response.getStatus());
+    }
+}
+----
+
+== Custom Server Configurations
+
+=== Standalone Configuration
+
+Implement `StandaloneConfigurationFactory` to customize standalone server configuration:
+
+[source,java]
+----
+@MetaInfServices
+public class CustomStandaloneConfig implements StandaloneConfigurationFactory {
+
+    @Override
+    public ServerConfiguration create(ExtensionContext context) {
+        return ServerConfiguration.builder()
+                .configFile("standalone-custom.xml")
+                .jvmArgs("-Xmx2g", "-XX:+UseG1GC")
+                .build();
+    }
+}
+----
+
+=== Domain Configuration
+
+Implement `DomainConfigurationFactory` for domain mode:
+
+[source,java]
+----
+@MetaInfServices
+public class CustomDomainConfig implements DomainConfigurationFactory {
+
+    @Override
+    public ServerConfiguration create(ExtensionContext context) {
+        return ServerConfiguration.builder()
+                .configFile("domain-custom.xml")
+                .hostConfigFile("host-custom.xml")
+                .build();
+    }
+}
+----
+
+== Server Management Operations
+
+Execute management operations using the `ServerManager`:
+
+[source,java]
+----
+@WildFlyTest
+@ManualMode(true)
+public class ManagementTest {
+
+    @ServerResource
+    private static ServerManager serverManager;
+
+    @Test
+    public void testManagementOperation() throws Exception {
+        // Read system property
+        ModelNode op = Operations.createReadAttributeOperation(
+                Operations.createAddress("system-property", "test.property"),
+                "value"
+        );
+        ModelNode result = serverManager.executeOperation(op);
+        Assertions.assertTrue(Operations.isSuccessfulOutcome(result));
+
+        // Write system property
+        op = Operations.createWriteAttributeOperation(
+                Operations.createAddress("system-property", "test.property"),
+                "value",
+                "newValue"
+        );
+        result = serverManager.executeOperation(op);
+        Assertions.assertTrue(Operations.isSuccessfulOutcome(result));
+    }
+}
+----
+
+== Taking Snapshots
+
+Save and restore server configuration:
+
+[source,java]
+----
+@WildFlyTest
+@ManualMode(true)
+public class SnapshotTest {
+
+    @ServerResource
+    private static ServerManager serverManager;
+    private static String restorePath;
+
+    @BeforeAll
+    static void snapshot() throws Exception {
+        restorePath = serverManager.takeSnapshot();
+    }
+
+    @AfterAll
+    static void restore() throws Exception {
+        if (restorePath != null) {
+            ModelNode op = Operations.createOperation("reload");
+            op.get("server-config").set(restorePath);
+            serverManager.executeReload(op);
+            serverManager.waitFor(30L, TimeUnit.SECONDS);
+            serverManager.executeOperation(Operations.createOperation("write-config"));
+        }
+    }
+
+    @Test
+    public void testWithConfigChanges() {
+        // Make configuration changes
+        // They will be reverted after test suite completes
+    }
+}
+----
+
+== Best Practices
+
+=== Resource Management
+
+* Use `@ServerResource` with `static` fields in `@ManualMode(true)` tests when managing server lifecycle in `@BeforeAll`/`@AfterAll`
+* Close client resources properly in `@AfterEach` or try-with-resources
+* Take snapshots before making configuration changes
+
+=== Performance
+
+* Minimize server restarts by using per-test deployments instead of server restarts
+* Use `@ManualMode` only when necessary
+* Share server instances across test classes when possible
+
+=== Test Organization
+
+* Group tests by deployment requirements
+* Use `@Tag` annotations to categorize tests (e.g., domain tests, manual mode tests)
+* Keep test deployments small and focused
+
+=== Debugging
+
+Enable debug logging for the framework by setting the `org.wildfly.testing` logger to DEBUG/FINE level in your logging configuration.
+The exact configuration depends on your logging framework (Java Util Logging, Log4j2, Logback, etc.).
+
+Run tests with remote debugging:
+
+[source,bash]
+----
+mvn test -Dwildfly.jvm.args="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
+----
+
+[appendix]
+== API Reference
+
+For complete API documentation, see the link:{javadoc-url}/index.html[JavaDoc API Documentation] and link:{plugin-tools-javadoc-url}[WildFly Plugin Tools Documentation].
+
+[appendix]
+== Related Documentation
+
+* link:../api/[WildFly JUnit API] - Conditional test execution annotations
+* link:../tools/[WildFly Testing Tools] - Deployment and module utilities
+* link:../[Main Documentation] - Complete testing tools documentation
+* link:troubleshooting.html[Troubleshooting Guide] - Extension-specific troubleshooting
+* https://junit.org/[JUnit Documentation] - JUnit user guide
+* https://wildfly.org[WildFly Project] - WildFly documentation

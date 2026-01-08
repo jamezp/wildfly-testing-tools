@@ -1,0 +1,279 @@
+= WildFly Testing Tools
+include::common-attributes.adoc[]
+:project-name: WildFly Testing Tools
+
+[abstract]
+== Abstract
+
+The WildFly Testing Tools module (`wildfly-testing-tools`) provides utilities for creating deployment descriptors, managing WildFly modules, and working with ShrinkWrap deployments. These tools can be used with any testing framework, not just the link:../extension/[WildFly JUnit Extension].
+
+== Overview
+
+This module provides two main utilities:
+
+* `DeploymentDescriptors` - Create common WildFly deployment descriptors programmatically
+* `ModuleBuilder` - Build custom WildFly modules for testing
+
+These utilities work with ShrinkWrap's `Asset` API and can be used with any testing framework including JUnit, TestNG, Arquillian, or standalone test harnesses.
+
+== Getting Started
+
+=== Maven Dependency
+
+Add the tools module to your test dependencies:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.wildfly.testing</groupId>
+    <artifactId>wildfly-testing-tools</artifactId>
+    <version>${version.org.wildfly.testing}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+=== Requirements
+
+* Java 17 or later
+* ShrinkWrap API 1.2 or later (for deployment descriptors)
+* WildFly installation (for module management)
+
+== Deployment Descriptors
+
+The `DeploymentDescriptors` class provides factory methods for creating common WildFly deployment descriptors as ShrinkWrap `Asset` objects.
+
+=== Creating jboss-web.xml
+
+Set a security domain:
+
+[source,java]
+----
+Asset jbossWeb = DeploymentDescriptors.createJBossWebSecurityDomain("my-domain");
+war.addAsWebInfResource(jbossWeb, "jboss-web.xml");
+----
+
+Set a context root:
+
+[source,java]
+----
+Asset jbossWeb = DeploymentDescriptors.createJBossWebContextRoot("/myapp");
+war.addAsWebInfResource(jbossWeb, "jboss-web.xml");
+----
+
+=== Creating jboss-deployment-structure.xml
+
+Manage module dependencies:
+
+[source,java]
+----
+Set<String> addedModules = Set.of("org.jboss.logging", "org.jboss.resteasy.resteasy-jackson2-provider");
+Set<String> excludedModules = Set.of("org.jboss.resteasy.resteasy-jaxb-provider");
+
+Asset deploymentStructure = DeploymentDescriptors.createJBossDeploymentStructure(
+    addedModules,
+    excludedModules
+);
+war.addAsManifestResource(deploymentStructure, "jboss-deployment-structure.xml");
+----
+
+This is particularly useful when:
+
+* You need to add WildFly modules that aren't automatically available
+* You want to exclude modules to avoid conflicts
+* Testing with specific module configurations
+
+=== Creating permissions.xml
+
+Configure runtime permissions for deployments running under a security manager:
+
+[source,java]
+----
+Set<Permission> permissions = new LinkedHashSet<>();
+permissions.add(new RuntimePermission("getClassLoader"));
+permissions.add(new SocketPermission("localhost:8080", "connect,resolve"));
+permissions.add(new PropertyPermission("user.dir", "read"));
+
+Asset permissionsXml = DeploymentDescriptors.createPermissionsXml(permissions);
+war.addAsManifestResource(permissionsXml, "permissions.xml");
+----
+
+Append permissions to existing configuration:
+
+[source,java]
+----
+Asset existingPermissions = DeploymentDescriptors.createPermissionsXml(basePermissions);
+Asset updatedPermissions = DeploymentDescriptors.appendPermissions(
+    existingPermissions,
+    additionalPermissions
+);
+----
+
+== Module Management
+
+The `ModuleBuilder` provides a fluent API for creating custom WildFly modules programmatically.
+
+=== Creating Modules
+
+Build custom WildFly modules:
+
+[source,java]
+----
+ModuleDescription moduleDescription = ModuleBuilder.of("com.example.mymodule")
+        .addDependency("org.jboss.logging")
+        .addDependency("org.jboss.resteasy.resteasy-core")
+        .addResourcePath("my-library.jar")
+        .build();
+----
+
+The module will be created in the WildFly modules directory and automatically cleaned up when the `ModuleDescription` is closed.
+
+=== Managing Module Dependencies
+
+Add optional dependencies:
+
+[source,java]
+----
+ModuleDependency optionalDep = ModuleDependency.builder("org.jboss.optional")
+        .setOptional(true)
+        .build();
+
+ModuleDescription moduleDescription = ModuleBuilder.of("com.example.mymodule")
+        .addDependency(optionalDep)
+        .build();
+----
+
+Control dependency exports and services:
+
+[source,java]
+----
+ModuleDependency dependency = ModuleDependency.builder("org.example.api")
+        .setExport(true)
+        .setServices("import")
+        .build();
+----
+
+=== Cleaning Up Modules
+
+Modules are automatically cleaned up when closed (try-with-resources):
+
+[source,java]
+----
+try (ModuleDescription module = ModuleBuilder.of("com.example.mymodule")
+        .addDependency("org.jboss.logging")
+        .build()) {
+    // Use the module during tests
+    // Module is automatically deleted when leaving this block
+}
+----
+
+Or manually close:
+
+[source,java]
+----
+moduleDescription.close();
+----
+
+== Using with Different Frameworks
+
+=== With WildFly JUnit Extension
+
+[source,java]
+----
+@WildFlyTest
+public class ModuleTest {
+
+    @DeploymentProducer
+    public static WebArchive createDeployment() {
+        Asset deploymentStructure = DeploymentDescriptors.createJBossDeploymentStructure(
+            Set.of("com.example.mymodule"),
+            Set.of()
+        );
+
+        return ShrinkWrap.create(WebArchive.class)
+                .addClass(MyClass.class)
+                .addAsManifestResource(deploymentStructure, "jboss-deployment-structure.xml");
+    }
+
+    @Test
+    public void testWithCustomModule() {
+        // Test implementation
+    }
+}
+----
+
+=== With Arquillian
+
+[source,java]
+----
+@ArquillianTest
+public class ArquillianModuleTest {
+
+    @Deployment
+    public static WebArchive createDeployment() {
+        Asset jbossWeb = DeploymentDescriptors.createJBossWebSecurityDomain("my-domain");
+
+        return ShrinkWrap.create(WebArchive.class)
+                .addClass(SecuredServlet.class)
+                .addAsWebInfResource(jbossWeb, "jboss-web.xml");
+    }
+
+    @Test
+    public void testSecurity() {
+        // Test implementation
+    }
+}
+----
+
+=== Standalone Usage
+
+[source,java]
+----
+public class StandaloneDeploymentBuilder {
+
+    public WebArchive buildTestDeployment() {
+        Set<Permission> permissions = new LinkedHashSet<>();
+        permissions.add(new RuntimePermission("getClassLoader"));
+        Asset permissionsXml = DeploymentDescriptors.createPermissionsXml(permissions);
+
+        return ShrinkWrap.create(WebArchive.class, "test.war")
+                .addClass(TestServlet.class)
+                .addAsManifestResource(permissionsXml, "permissions.xml");
+    }
+}
+----
+
+== Best Practices
+
+=== Deployment Descriptors
+
+* Use `DeploymentDescriptors` instead of manually creating XML strings
+* Keep deployment descriptors minimal - only add what's necessary
+* Use meaningful security domain and context root names
+* Document why specific modules are added or excluded
+
+=== Module Management
+
+* Always use try-with-resources or manually close `ModuleDescription`
+* Use unique module names to avoid conflicts between tests
+* Clean up modules in `@AfterAll` or equivalent teardown methods
+* Don't create modules in production code - only for testing
+
+=== Integration
+
+* Combine with link:../api/[@RequiresModule] to skip tests when modules aren't available
+* Use link:../extension/[WildFly JUnit Extension] for automatic lifecycle management
+* Leverage ShrinkWrap's fluent API for clean test code
+
+[appendix]
+== API Reference
+
+For complete API documentation, see the link:{javadoc-url}/index.html[JavaDoc API Documentation].
+
+[appendix]
+== Related Documentation
+
+* link:../api/[WildFly JUnit API] - Conditional test execution annotations
+* link:../extension/[WildFly JUnit Extension] - Full-featured WildFly testing framework
+* link:../[Main Documentation] - Complete testing tools documentation
+* link:../examples.html[Real-World Examples] - Practical usage examples
+* https://github.com/shrinkwrap/shrinkwrap[ShrinkWrap] - Java API for creating archives

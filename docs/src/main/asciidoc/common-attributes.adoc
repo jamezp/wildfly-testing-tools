@@ -1,0 +1,26 @@
+// Common attributes shared across all documentation
+:author: WildFly Team
+:email: wildfly-dev@lists.jboss.org
+:version-label: Version
+:doctype: book
+:license: Apache License v2.0
+:source-highlighter: highlight.js
+:highlightjs-theme: github
+:toc: left
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 4
+:sectanchors:
+:sectlinks:
+:idprefix:
+:idseparator: -
+:icons: font
+:source-language: java
+:experimental:
+:linkcss: false
+
+// Project-specific attributes
+// Default for subdirectory docs (api/, extension/, tools/)
+// Root index.adoc should override with :javadoc-url: apidocs
+:javadoc-url: ../apidocs
+:plugin-tools-javadoc-url: https://docs.wildfly.org/wildfly-plugin-tools

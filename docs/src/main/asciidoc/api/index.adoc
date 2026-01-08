@@ -1,0 +1,257 @@
+= WildFly JUnit API
+include::common-attributes.adoc[]
+:project-name: WildFly JUnit API
+
+[abstract]
+== Abstract
+
+The WildFly JUnit API module (`wildfly-junit-api`) provides annotations and conditions for conditional test execution.
+This module can be used with the link:../extension/[WildFly JUnit Extension], https://arquillian.org/[Arquillian], or any
+other JUnit based testing framework.
+
+== Overview
+
+This module provides three main annotations:
+
+* `@RequiresModule` - Conditionally run tests based on WildFly module availability
+* `@AnyOf` - Run tests if any of multiple module requirements are met
+* `@JBossHome` - Inject WildFly installation directory into test parameters
+
+These annotations enable flexible, environment-aware testing without hardcoding assumptions about the WildFly configuration.
+
+== Getting Started
+
+=== Maven Dependency
+
+Add the API module to your test dependencies:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.wildfly.testing</groupId>
+    <artifactId>wildfly-junit-api</artifactId>
+    <version>${version.org.wildfly.testing}</version>
+    <scope>test</scope>
+</dependency>
+----
+
+=== Requirements
+
+* Java 17 or later
+* JUnit 6.0 or later
+* WildFly installation (for module checking)
+
+== @RequiresModule
+
+The `@RequiresModule` annotation disables tests when a required WildFly module is not available.
+
+=== How It Works
+
+The annotation checks for module existence by looking in the WildFly modules directory (`$JBOSS_HOME/modules`). It searches for the module's `module.xml` file at the path corresponding to the module name. For example, `org.jboss.as.ejb3` maps to `$JBOSS_HOME/modules/org/jboss/as/ejb3/main/module.xml`.
+
+If the module is not found, the test is **disabled** (skipped), not failed. This is useful for:
+
+* Testing optional features that may not be present in all WildFly distributions
+* Running the same test suite against different WildFly configurations
+* Conditional testing based on available subsystems
+
+=== Basic Usage
+
+[source,java]
+----
+@RequiresModule("org.jboss.as.ejb3")
+public class Ejb3Test {
+    @Test
+    public void testEjb() {
+        // This test only runs if the EJB3 subsystem is present
+    }
+}
+----
+
+=== Version Requirements
+
+You can specify a minimum module version:
+
+[source,java]
+----
+@RequiresModule(
+    value = "org.jboss.as.ejb3",
+    minVersion = "32.0.0.Beta1",
+    reason = "This test requires EJB 4.0 support",
+    issueRef = "https://issues.redhat.com/browse/WFLY-12345"
+)
+public class Ejb4Test {
+    @Test
+    public void testEjb4Feature() {
+        // Test implementation
+    }
+}
+----
+
+=== Multiple Requirements
+
+Use multiple `@RequiresModule` annotations when all conditions must be met:
+
+[source,java]
+----
+@RequiresModule("org.jboss.as.ejb3")
+@RequiresModule("org.jboss.as.jpa")
+public class EjbJpaTest {
+    // Runs only if both EJB and JPA modules are available
+}
+----
+
+== @AnyOf
+
+The `@AnyOf` annotation allows a test to run if at least one of multiple module requirements is met:
+
+[source,java]
+----
+@AnyOf({
+    @RequiresModule("org.jboss.resteasy.resteasy-client"),
+    @RequiresModule("org.jboss.resteasy.resteasy-vertx-client")
+})
+public class RestClientTest {
+    @Test
+    public void testRestClient() {
+        // Runs if either RESTEasy client module is available
+    }
+}
+----
+
+== @JBossHome
+
+The `@JBossHome` annotation injects the WildFly installation directory into test parameters:
+
+[source,java]
+----
+public class ConfigTest {
+    @Test
+    public void testConfiguration(@JBossHome Path jbossHome) {
+        Path configFile = jbossHome.resolve("standalone/configuration/standalone.xml");
+        Assertions.assertTrue(Files.exists(configFile));
+    }
+}
+----
+
+Supported parameter types:
+
+* `java.lang.String`
+* `java.nio.file.Path`
+* `java.io.File`
+
+=== Resolution Order
+
+The framework resolves the WildFly installation directory in this order:
+
+1. `jboss.home` system property
+2. `JBOSS_HOME` environment variable
+3. `jboss.home.dir` system property
+
+If none are set, a `ParameterResolutionException` is thrown.
+
+== Using with Arquillian
+
+The API module can be used with Arquillian for conditional test execution:
+
+[source,java]
+----
+@ArquillianTest
+@RequiresModule("org.jboss.as.ejb3")
+public class ArquillianEjbTest {
+
+    @Deployment
+    public static WebArchive createDeployment() {
+        return ShrinkWrap.create(WebArchive.class)
+                .addClass(MyBean.class);
+    }
+
+    @BeforeAll
+    static void checkConfig(@JBossHome final Path jbossHome) throws Exception {
+        if (Files.notExists(jbossHome.resolve("standalone/configuration/app.properties"))) {
+            final var config = Files.createFile(jbossHome.resolve("standalone/configuration/app.properties"));
+            Files.writeString(config, "test.app=testing\n");
+        }
+    }
+
+    @Test
+    public void testEjb() {
+        // Test implementation
+    }
+}
+----
+
+== Using with WildFly JUnit Extension
+
+The API works seamlessly with the link:../extension/[WildFly JUnit Extension]:
+
+[source,java]
+----
+@WildFlyTest
+@RequiresModule("org.jboss.as.ejb3")
+public class WildFlyEjbTest {
+
+    @DeploymentProducer
+    public static WebArchive createDeployment() {
+        return ShrinkWrap.create(WebArchive.class)
+                .addClass(MyBean.class);
+    }
+
+    @Test
+    public void testEjb(@JBossHome Path jbossHome) {
+        // Test with both WildFly extension and API features
+    }
+}
+----
+
+== Best Practices
+
+=== Module Naming
+
+Always use the fully qualified module name:
+
+[source,java]
+----
+@RequiresModule("org.jboss.as.ejb3")  // Correct
+@RequiresModule("ejb3")                // Wrong - will not be found
+----
+
+=== Descriptive Reasons
+
+When using version requirements or complex conditions, provide clear reasons:
+
+[source,java]
+----
+@RequiresModule(
+    value = "org.wildfly.security.elytron",
+    minVersion = "2.0.0",
+    reason = "Test requires Elytron 2.0+ credential store features"
+)
+----
+
+=== Combining with Other Conditions
+
+You can combine `@RequiresModule` with JUnit's built-in conditions:
+
+[source,java]
+----
+@RequiresModule("org.jboss.as.ejb3")
+@EnabledOnOs(OS.LINUX)
+@EnabledIfSystemProperty(named = "run.integration.tests", matches = "true")
+public class ConditionalTest {
+    // Runs only if all conditions are met
+}
+----
+
+[appendix]
+== API Reference
+
+For complete API documentation, see the link:{javadoc-url}/index.html[JavaDoc API Documentation].
+
+[appendix]
+== Related Documentation
+
+* link:../extension/[WildFly JUnit Extension] - Full-featured WildFly testing framework
+* link:../tools/[WildFly Testing Tools] - Deployment and module utilities
+* link:../[Main Documentation] - Complete testing tools documentation
+* https://junit.org/[JUnit Documentation] - JUnit user guide

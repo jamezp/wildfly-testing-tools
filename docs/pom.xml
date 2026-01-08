@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.wildfly.testing</groupId>
+        <artifactId>wildfly-testing-tools-parent</artifactId>
+        <version>1.0.0.Beta1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>wildfly-testing-tools-docs</artifactId>
+    <name>WildFly Testing Tools Documentation</name>
+    <description>Documentation for the testing tools</description>
+
+    <properties>
+        <version.asciidoctor.maven.plugin>3.2.0</version.asciidoctor.maven.plugin>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <version>${version.asciidoctor.maven.plugin}</version>
+                <executions>
+                    <execution>
+                        <id>generate-html-doc</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-docs</outputDirectory>
+                            <preserveDirectories>true</preserveDirectories>
+                            <backend>html5</backend>
+                            <standalone>true</standalone>
+                            <attributes>
+                                <revnumber>${project.version}</revnumber>
+                                <revdate>${maven.build.timestamp}</revdate>
+                            </attributes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

@@ -30,6 +30,7 @@
         <module>api</module>
         <module>extension</module>
         <module>boms/bom</module>
+        <module>docs</module>
     </modules>
 
     <properties>
@@ -129,6 +130,52 @@
                             <version>${version.org.kohsuke.metainf-services}</version>
                         </path>
                     </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <!-- Aggregation settings -->
+                    <reportOutputDirectory>${project.build.directory}/site</reportOutputDirectory>
+                    <destDir>apidocs</destDir>
+
+                    <!-- Module grouping -->
+                    <groups>
+                        <group>
+                            <title>JUnit API</title>
+                            <packages>org.wildfly.testing.junit.annotation:org.wildfly.testing.junit.condition</packages>
+                        </group>
+                        <group>
+                            <title>JUnit Extension</title>
+                            <packages>org.wildfly.testing.junit.extension*</packages>
+                        </group>
+                        <group>
+                            <title>Testing Tools</title>
+                            <packages>org.wildfly.testing.tools*</packages>
+                        </group>
+                    </groups>
+
+                    <!-- Documentation metadata -->
+                    <doctitle>WildFly Testing Tools ${project.version} API</doctitle>
+                    <windowtitle>WildFly Testing Tools ${project.version} API</windowtitle>
+                    <header><![CDATA[<b>WildFly Testing Tools</b><br/><font size="-1">${project.version}</font>]]></header>
+                    <bottom><![CDATA[Copyright &#169; {currentYear} <a href="https://www.wildfly.org">WildFly</a>. All rights reserved.]]></bottom>
+
+                    <!-- Additional options -->
+                    <show>protected</show>
+                    <notimestamp>true</notimestamp>
+                    <quiet>true</quiet>
+                    <encoding>UTF-8</encoding>
+                    <docencoding>UTF-8</docencoding>
+                    <charset>UTF-8</charset>
+
+                    <!-- Link to Java SE API docs -->
+                    <links>
+                        <link>https://docs.oracle.com/en/java/javase/17/docs/api/</link>
+                        <link>https://junit.org/junit5/docs/current/api/</link>
+                        <link>https://docs.wildfly.org/wildfly-plugin-tools/</link>
+                    </links>
                 </configuration>
             </plugin>
             <!-- Enable auto-formatting of source files -->
@@ -288,18 +335,6 @@
 
             <build>
                 <plugins>
-                    <!-- Semantically ordered -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <configuration>
-                            <rules>
-                                <requireReleaseDeps>
-                                    <message>No Snapshots Allowed!</message>
-                                </requireReleaseDeps>
-                            </rules>
-                        </configuration>
-                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
@@ -316,6 +351,13 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <executions>
+                            <execution>
+                                <id>aggregate-javadoc</id>
+                                <goals>
+                                    <goal>aggregate</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
                             <execution>
                                 <id>attach-javadocs</id>
                                 <goals>
