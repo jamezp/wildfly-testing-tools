@@ -6,7 +6,11 @@
 package org.wildfly.testing.junit.extension.api;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -16,6 +20,11 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 public class ServerConfiguration {
+
+    private static final Pattern WHITESPACE_IF_NOT_QUOTED = Pattern.compile("\"([^\"]*)\"|(\\S+)");
+
+    static final String PROTOCOL_PROPERTY = "wildfly.http.protocol";
+    static final String PORT_PROPERTY = "wildfly.http.port";
 
     /**
      * Resolves the servers base directory. This first uses the
@@ -69,8 +78,11 @@ public class ServerConfiguration {
     }
 
     /**
-     * Resolves the base URI from the configuration parameters {@code wildfly.http.protocol}, {@code wildfly.http.host}.
-     * {@code wildfly.http.port}.
+     * Resolves the base URI from the configuration parameters {@code wildfly.http.protocol}, {@code wildfly.http.host},
+     * and {@code wildfly.http.port}.
+     * <p>
+     * The port defaults to {@code 8080} for HTTP or {@code 8443} for HTTPS if not explicitly set.
+     * </p>
      * <p>
      * <table>
      * <tr>
@@ -87,7 +99,7 @@ public class ServerConfiguration {
      * </tr>
      * <tr>
      * <td>{@code wildfly.http.port}</td>
-     * <td>8080</td>
+     * <td>8080 (HTTP) or 8443 (HTTPS)</td>
      * </tr>
      * </table>
      * </p>
@@ -98,14 +110,45 @@ public class ServerConfiguration {
      */
     public static String resolveBaseUri(final ExtensionContext context) {
         // Resolve the protocol
-        final String protocol = context.getConfigurationParameter("wildfly.http.protocol").orElse("http");
+        final String protocol = context.getConfigurationParameter(PROTOCOL_PROPERTY).orElse("http");
 
         // Resolve the host
         final String host = context.getConfigurationParameter("wildfly.http.host").orElse("localhost");
 
         // Resolve the port
-        final int port = context.getConfigurationParameter("wildfly.http.port", Integer::parseInt).orElse(8080);
+        final int port = context.getConfigurationParameter(PORT_PROPERTY, Integer::parseInt).orElseGet(() -> {
+            if ("https".equalsIgnoreCase(protocol)) {
+                return 8443;
+            }
+            return 8080;
+        });
 
         return String.format("%s://%s:%d", protocol, host, port);
     }
+
+    /**
+     * Splits a string containing arguments at whitespace, respecting quoted strings.
+     * <p>
+     * Example: {@code "-Xmx512m \"-agentlib:jdwp=transport=dt_socket,server=y\""}
+     * <br/>
+     * becomes {@code ["-Xmx512m", "-agentlib:jdwp=transport=dt_socket,server=y"]}
+     * </p>
+     *
+     * @param options the options string to split
+     *
+     * @return a list of arguments
+     */
+    static List<String> splitArguments(String options) {
+        final List<String> params = new ArrayList<>();
+        final Matcher m = WHITESPACE_IF_NOT_QUOTED.matcher(options);
+        while (m.find()) {
+            if (m.group(1) != null) {
+                params.add(m.group(1));
+            } else {
+                params.add(m.group(2));
+            }
+        }
+        return params;
+    }
+
 }

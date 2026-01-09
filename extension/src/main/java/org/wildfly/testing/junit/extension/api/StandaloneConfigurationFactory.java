@@ -5,10 +5,14 @@
 
 package org.wildfly.testing.junit.extension.api;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.ServiceLoader;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.commons.JUnitException;
+import org.wildfly.core.launcher.StandaloneCommandBuilder;
+import org.wildfly.plugin.tools.server.Configuration;
 import org.wildfly.plugin.tools.server.StandaloneConfiguration;
 
 /**
@@ -28,11 +32,14 @@ import org.wildfly.plugin.tools.server.StandaloneConfiguration;
  * <li>{@code jboss.home} - Path to WildFly installation</li>
  * <li>{@code wildfly.java.home} - Java home to use for the server</li>
  * <li>{@code wildfly.module.path} - Module path for the server</li>
+ * <li>{@code wildfly.java.opts} - Additional JVM arguments for the server</li>
+ * <li>{@code wildfly.http.protocol} - HTTP protocol (http or https)</li>
+ * <li>{@code wildfly.http.port} - HTTP/HTTPS port</li>
  * </ul>
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
-public interface StandaloneConfigurationFactory {
+public class StandaloneConfigurationFactory {
 
     /**
      * Creates a standalone configuration.
@@ -41,18 +48,58 @@ public interface StandaloneConfigurationFactory {
      *
      * @return the standalone configuration
      */
-    StandaloneConfiguration configuration(ExtensionContext context);
+    public final StandaloneConfiguration configuration(final ExtensionContext context) {
+        final Path jbossHome = ServerConfiguration.resolveJBossHome(context).orElseThrow(() -> new JUnitException(
+                "Server home not configured. Set jboss.home in junit-platform.properties, " +
+                        "jboss.home system property, or JBOSS_HOME environment variable."));
+
+        final StandaloneCommandBuilder commandBuilder = StandaloneCommandBuilder.of(jbossHome);
+
+        // Configure optional properties
+        ServerConfiguration.resolveJavaHome(context).ifPresent(commandBuilder::setJavaHome);
+
+        ServerConfiguration.resolveModulePath(context)
+                .ifPresent(modulePath -> commandBuilder.setModuleDirs(modulePath));
+
+        context.getConfigurationParameter("wildfly.java.opts")
+                .ifPresent(value -> commandBuilder.addJavaOptions(ServerConfiguration.splitArguments(value)));
+
+        final var protocolOpt = context.getConfigurationParameter(ServerConfiguration.PROTOCOL_PROPERTY);
+        final var portOpt = context.getConfigurationParameter(ServerConfiguration.PORT_PROPERTY, Integer::parseInt);
+
+        if (portOpt.isPresent()) {
+            final int port = portOpt.get();
+            if (protocolOpt.isPresent()) {
+                commandBuilder.addJavaOption("-Djboss.%s.port=%d".formatted(protocolOpt.get(), port));
+            } else {
+                commandBuilder.addJavaOption("-Djboss.http.port=%d".formatted(port));
+            }
+        }
+
+        return configure(commandBuilder);
+    }
+
+    /**
+     * Configure the {@link StandaloneCommandBuilder} and create the {@link StandaloneConfiguration}.
+     *
+     * @param commandBuilder the command builder used to create the configuration
+     *
+     * @return the standalone configuration
+     */
+    protected StandaloneConfiguration configure(final StandaloneCommandBuilder commandBuilder) {
+        return Configuration.create(commandBuilder);
+    }
 
     /**
      * Creates a factory instance using the hybrid configuration approach.
      *
      * @return a configuration factory
      */
-    static StandaloneConfigurationFactory create() {
+    public static StandaloneConfigurationFactory create() {
         // Try ServiceLoader first for custom implementations
         final ServiceLoader<StandaloneConfigurationFactory> loader = ServiceLoader.load(StandaloneConfigurationFactory.class);
         final Optional<StandaloneConfigurationFactory> factory = loader.findFirst();
-        return factory.orElseGet(DefaultStandaloneConfigurationFactory::new);
+        return factory.orElseGet(StandaloneConfigurationFactory::new);
     }
 
 }

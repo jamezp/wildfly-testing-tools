@@ -59,7 +59,7 @@ Debug WildFly during tests:
 
 [source,bash]
 ----
-mvn test -Dwildfly.jvm.args="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
+mvn test -Dwildfly.java.opts="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
 ----
 
 Then attach your IDE's debugger to port 8787. Set `suspend=n` if you don't want WildFly to wait for the debugger before starting.

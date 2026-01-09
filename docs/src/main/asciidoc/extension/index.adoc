@@ -375,7 +375,7 @@ This chapter covers all configuration options for {project-name}.
 
 |`wildfly.http.protocol`
 |String
-|HTTP protocol
+|HTTP protocol (`http` or `https`)
 |`http`
 
 |`wildfly.http.host`
@@ -385,15 +385,10 @@ This chapter covers all configuration options for {project-name}.
 
 |`wildfly.http.port`
 |Integer
-|HTTP port
-|`8080`
+|HTTP/HTTPS port
+|`8080` (HTTP), `8443` (HTTPS)
 
-|`wildfly.management.port`
-|Integer
-|Management port
-|`9990`
-
-|`wildfly.jvm.args`
+|`wildfly.java.opts`
 |String
 |Additional JVM arguments for WildFly
 |None
@@ -423,6 +418,24 @@ Path to a different Java Runtime Environment. Defaults to the current JVM (`java
 mvn test -Dwildfly.java.home=/usr/lib/jvm/java-21
 ----
 
+=== Java Options
+
+`wildfly.java.opts`::
+Additional JVM arguments passed to the WildFly server process. Multiple arguments can be space-separated. Use quotes for
+arguments containing spaces or special characters.
++
+[source,bash]
+----
+# Single option
+mvn test -Dwildfly.java.opts="-Xmx1024m"
+
+# Multiple options
+mvn test -Dwildfly.java.opts="-Xmx1024m -XX:+UseG1GC"
+
+# Options with commas or complex values (use quotes)
+mvn test -Dwildfly.java.opts="\"-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787\""
+----
+
 === Module Path
 
 `wildfly.module.path`::
@@ -446,17 +459,28 @@ mvn test -Dwildfly.timeout=120
 === HTTP Configuration
 
 `wildfly.http.protocol`::
-Protocol for HTTP connections. Default: `http`.
+Protocol for HTTP connections. Can be `http` or `https`. Default: `http`.
++
+When set, the framework configures the WildFly server to listen on the corresponding port using the appropriate `jboss.http.port` or `jboss.https.port` system property.
 
 `wildfly.http.host`::
-Host for HTTP connections. Default: `localhost`.
+Host for HTTP connections used in URI resolution. Default: `localhost`.
 
 `wildfly.http.port`::
-Port for HTTP connections. Default: `8080`.
+Port for HTTP connections. Default: `8080` for HTTP, `8443` for HTTPS.
++
+The framework passes this to WildFly as `-Djboss.http.port` or `-Djboss.https.port` depending on the protocol.
 
 [source,bash]
 ----
+# HTTP on custom port
 mvn test -Dwildfly.http.port=8180
+
+# HTTPS with default port
+mvn test -Dwildfly.http.protocol=https
+
+# HTTPS on custom port
+mvn test -Dwildfly.http.protocol=https -Dwildfly.http.port=9443
 ----
 
 == JUnit Configuration
@@ -525,21 +549,23 @@ For continuous integration with provisioned server:
 
 === Custom Ports
 
-When default ports are unavailable:
+When default ports are unavailable or testing with HTTPS:
 
 [source,bash]
 ----
-mvn test \
-  -Dwildfly.http.port=8180 \
-  -Dwildfly.management.port=10090
+# Custom HTTP port
+mvn test -Dwildfly.http.port=8180
+
+# HTTPS on custom port
+mvn test -Dwildfly.http.protocol=https -Dwildfly.http.port=9443
 ----
 
 Or in `junit-platform.properties`:
 
 [source,properties]
 ----
-wildfly.http.port=8180
-wildfly.management.port=10090
+wildfly.http.protocol=https
+wildfly.http.port=8443
 ----
 
 === Remote Debugging
@@ -548,10 +574,12 @@ Enable remote debugging of WildFly during tests:
 
 [source,bash]
 ----
-mvn test -Dwildfly.jvm.args="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
+mvn test -Dwildfly.java.opts="\"-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787\""
 ----
 
 Then attach your IDE debugger to port 8787.
+
+NOTE: The debug agent argument contains commas, so it must be quoted to prevent argument splitting.
 
 === Different Java Version
 
@@ -817,7 +845,7 @@ Run tests with remote debugging:
 
 [source,bash]
 ----
-mvn test -Dwildfly.jvm.args="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
+mvn test -Dwildfly.java.opts="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
 ----
 
 [appendix]
