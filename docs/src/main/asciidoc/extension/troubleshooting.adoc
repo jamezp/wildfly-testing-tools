@@ -27,7 +27,7 @@ netstat -ano | findstr :8080
 +
 [source,bash]
 ----
-mvn test -Dwildfly.http.port=8180 -Dwildfly.management.port=10090
+mvn test -Dwildfly.http.port=8180
 ----
 
 2. **JBOSS_HOME Not Set**
@@ -352,7 +352,7 @@ Debug the server during tests:
 
 [source,bash]
 ----
-mvn test -Dwildfly.jvm.args="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
+mvn test -Dwildfly.java.opts="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
 ----
 
 Then attach your IDE's debugger to port 8787.
