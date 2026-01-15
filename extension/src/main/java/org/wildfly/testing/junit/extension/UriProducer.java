@@ -44,7 +44,7 @@ public class UriProducer implements ServerResourceProducer {
             throws IllegalArgumentException {
         if (!URI.class.isAssignableFrom(clazz)) {
             throw new IllegalArgumentException(
-                    String.format("Type %s is not assignable to %s", clazz.getName(), URI.class.getName()));
+                    "Type %s is not assignable to %s".formatted(clazz.getName(), URI.class.getName()));
         }
 
         final Optional<ServerManager> opt = WildFlyExtension.getServer(context);
@@ -102,7 +102,7 @@ public class UriProducer implements ServerResourceProducer {
         if (path.startsWith("/")) {
             return URI.create(uriString + path);
         }
-        return URI.create(uriString + "/" + path);
+        return URI.create("%s/%s".formatted(uriString, path));
     }
 
     /**
@@ -183,7 +183,7 @@ public class UriProducer implements ServerResourceProducer {
             }
             return URI.create(baseUri);
         }
-        throw new JUnitException(String.format("ServerManager %s is not a DomainManager", serverManager));
+        throw new JUnitException("ServerManager %s is not a DomainManager".formatted(serverManager));
     }
 
     private static ModelNode resolveAddress(final ServerManager serverManager, final String domainServer,

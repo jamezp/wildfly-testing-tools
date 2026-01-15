@@ -5,13 +5,13 @@
 
 package org.wildfly.testing.extension.extension.manual;
 
-import org.wildfly.testing.junit.extension.annotation.Domain;
+import org.wildfly.testing.junit.extension.annotation.WildFlyDomainTest;
 
 /**
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
-@Domain
+@WildFlyDomainTest
 public class DomainBeforeAllIT extends AbstractBeforeAll {
     @Override
     public String expectedLaunchType() {

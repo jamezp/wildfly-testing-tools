@@ -12,6 +12,7 @@ import org.junit.jupiter.api.TestInfo;
 import org.wildfly.testing.junit.extension.annotation.GenerateDeployment;
 import org.wildfly.testing.junit.extension.annotation.RequestPath;
 import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 import org.wildfly.testing.tools.deployment.Deployments;
 
 /**
@@ -19,6 +20,7 @@ import org.wildfly.testing.tools.deployment.Deployments;
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
+@WildFlyTest
 public class InferEarDeploymentIT extends AbstractEarDeploymentTest {
 
     @ServerResource

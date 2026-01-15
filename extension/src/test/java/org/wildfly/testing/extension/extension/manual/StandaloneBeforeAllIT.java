@@ -13,11 +13,13 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.wildfly.plugin.tools.server.ServerManager;
 import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 
 /**
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
+@WildFlyTest
 public class StandaloneBeforeAllIT extends AbstractBeforeAll {
     @ServerResource
     private static ServerManager serverManager;

@@ -82,6 +82,34 @@ public class MyTest {
 }
 ----
 
+=== Test Tags
+
+Tests are automatically tagged to allow selective execution:
+
+* `@WildFlyTest` - tagged with `standalone`
+* `@WildFlyDomainTest` - tagged with `domain`
+* `@ManualMode` - tagged with `manual`
+
+Examples:
+
+[source,bash]
+----
+# Run only standalone tests
+mvn test -Dgroups=standalone
+
+# Run only domain tests
+mvn test -Dgroups=domain
+
+# Run only manual mode tests
+mvn test -Dgroups=manual
+
+# Run standalone automatic mode tests (not manual)
+mvn test -Dgroups='standalone & !manual'
+
+# Run all non-domain tests
+mvn test -Dgroups='!domain'
+----
+
 == Creating Deployments
 
 === @DeploymentProducer
@@ -219,11 +247,11 @@ Test deployments on a domain controller:
 
 [source,java]
 ----
-@WildFlyTest
-@Domain("main-server-group")
+@WildFlyDomainTest
 public class DomainTest {
 
     @DeploymentProducer
+    @ServerGroup("main-server-group")
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
@@ -267,10 +295,11 @@ To use domain mode testing:
 ----
 
 3. **Use the correct annotations**:
-   - `@Domain("server-group-name")` on the test class (you can specify multiple server groups: `@Domain({"group1", "group2"})`)
+   - `@WildFlyDomainTest` on the test class
+   - `@ServerGroup("server-group-name")` on the deployment method (you can specify multiple server groups: `@ServerGroup({"group1", "group2"})`)
    - `@DomainServer("server-name")` on `@ServerResource` fields to target specific servers
 
-NOTE: Domain tests are automatically tagged with `@Tag("domain-test")`. You can use this to run domain tests separately: `mvn test -Dgroups=domain-test`
+NOTE: Domain tests are automatically tagged with `@Tag("domain")`. You can use this to run domain tests separately: `mvn test -Dgroups=domain`
 
 == ServerManager API
 

@@ -336,7 +336,7 @@ public class DeploymentDescriptors {
     public static Collection<Permission> addModuleFilePermission(final String... moduleNames) {
         final String value = System.getProperty("module.jar.path");
         if (value == null || value.isBlank()) {
-            return Collections.emptySet();
+            return Set.of();
         }
         // Get the module path
         final Path moduleDir = Path.of(value);
@@ -439,10 +439,9 @@ public class DeploymentDescriptors {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof PermissionDescription)) {
+            if (!(obj instanceof PermissionDescription other)) {
                 return false;
             }
-            final PermissionDescription other = (PermissionDescription) obj;
             return Objects.equals(className, other.className)
                     && Objects.equals(name, other.name)
                     && Objects.equals(actions, other.actions);

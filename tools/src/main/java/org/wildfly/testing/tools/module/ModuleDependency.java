@@ -362,10 +362,9 @@ public class ModuleDependency implements Comparable<ModuleDependency> {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof PathFilter)) {
+            if (!(obj instanceof PathFilter other)) {
                 return false;
             }
-            final PathFilter other = (PathFilter) obj;
             return Objects.equals(path, other.path) && Objects.equals(include, other.include);
         }
 

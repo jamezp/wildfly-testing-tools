@@ -288,11 +288,15 @@ war.addClass(SpecificClass1.class)
 
 1. **Server Group Doesn't Exist**
 +
-Verify the server group name matches your domain configuration:
+Verify the server group name on your deployment method matches your domain configuration:
 +
 [source,java]
 ----
-@Domain("main-server-group")  // Must match domain.xml
+@DeploymentProducer
+@ServerGroup("main-server-group")  // Must match domain.xml
+public static WebArchive deployment() {
+    return ShrinkWrap.create(WebArchive.class);
+}
 ----
 
 2. **Server Not in Group**

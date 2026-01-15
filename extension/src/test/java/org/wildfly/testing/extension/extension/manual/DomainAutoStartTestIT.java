@@ -7,17 +7,26 @@ package org.wildfly.testing.extension.extension.manual;
 
 import java.net.URI;
 
-import org.wildfly.testing.junit.extension.annotation.Domain;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.wildfly.testing.junit.extension.annotation.DomainServer;
+import org.wildfly.testing.junit.extension.annotation.GenerateDeployment;
 import org.wildfly.testing.junit.extension.annotation.RequestPath;
+import org.wildfly.testing.junit.extension.annotation.ServerGroup;
 import org.wildfly.testing.junit.extension.annotation.ServerResource;
+import org.wildfly.testing.junit.extension.annotation.WildFlyDomainTest;
 
 /**
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
-@Domain("main-server-group")
+@WildFlyDomainTest
 public class DomainAutoStartTestIT extends AbstractAutoStartTest {
+
+    @GenerateDeployment
+    @ServerGroup("main-server-group")
+    public static void createDeployment(final WebArchive war) {
+        createDefaultDeployment(war);
+    }
 
     @ServerResource
     @RequestPath("/test")

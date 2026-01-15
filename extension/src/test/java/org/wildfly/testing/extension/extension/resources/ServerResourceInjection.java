@@ -15,13 +15,11 @@ import org.wildfly.plugin.tools.DeploymentManager;
 import org.wildfly.plugin.tools.server.ServerManager;
 import org.wildfly.testing.junit.extension.annotation.RequestPath;
 import org.wildfly.testing.junit.extension.annotation.ServerResource;
-import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 
 /**
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
-@WildFlyTest
 class ServerResourceInjection {
 
     @ServerResource

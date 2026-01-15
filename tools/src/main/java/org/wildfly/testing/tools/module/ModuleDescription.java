@@ -78,13 +78,13 @@ public final class ModuleDescription implements AutoCloseable, Comparable<Module
                 writer.writeEndDocument();
             } catch (XMLStreamException e) {
                 throw new RuntimeException(
-                        String.format("Failed to create the module-alias for %s with a target of %s", moduleName, targetName),
+                        "Failed to create the module-alias for %s with a target of %s".formatted(moduleName, targetName),
                         e);
             }
             return new ModuleDescription(moduleName, mp, moduleDir);
         } catch (IOException e) {
             throw new UncheckedIOException(
-                    String.format("Failed to create the module-alias for %s with a target of %s", moduleName, targetName), e);
+                    "Failed to create the module-alias for %s with a target of %s".formatted(moduleName, targetName), e);
         }
     }
 
@@ -133,7 +133,7 @@ public final class ModuleDescription implements AutoCloseable, Comparable<Module
                 } catch (IOException e) {
                     Logger.getLogger(ModuleBuilder.class).errorf(e, "Failed to delete module %s", name);
                 }
-            }, String.format("%s-shutdown", name));
+            }, "%s-shutdown".formatted(name));
             task.setDaemon(true);
             Runtime.getRuntime().addShutdownHook(task);
         }
@@ -149,10 +149,9 @@ public final class ModuleDescription implements AutoCloseable, Comparable<Module
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof ModuleDescription)) {
+        if (!(obj instanceof ModuleDescription other)) {
             return false;
         }
-        final ModuleDescription other = (ModuleDescription) obj;
         return Objects.equals(name, other.name) && Objects.equals(modulePath, other.modulePath);
     }
 

@@ -21,21 +21,17 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.extension.annotation.GenerateDeployment;
 import org.wildfly.testing.junit.extension.annotation.ManualMode;
 import org.wildfly.testing.junit.extension.annotation.ServerResource;
-import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 
 /**
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
-@WildFlyTest
 @ManualMode(true)
 abstract class AbstractAutoStartBeforeEach implements ManualModeTest {
 
-    @GenerateDeployment
-    public static void createDeployment(final WebArchive war) {
+    public static void createDefaultDeployment(final WebArchive war) {
         war.addClasses(TestServlet.class);
     }
 
@@ -53,7 +49,7 @@ abstract class AbstractAutoStartBeforeEach implements ManualModeTest {
         final var uri = getUri();
         Assertions.assertNotNull(uri);
         Assertions.assertTrue(uri.toString().endsWith("/test"),
-                () -> String.format("Expected URI to contain the request path /test at the end: %s", uri));
+                () -> "Expected URI to contain the request path /test at the end: %s".formatted(uri));
     }
 
     @Test
@@ -64,7 +60,7 @@ abstract class AbstractAutoStartBeforeEach implements ManualModeTest {
                 .build();
         final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         Assertions.assertEquals(200, response.statusCode(),
-                () -> String.format("Expected HTTP status code %d: %s", response.statusCode(), response.body()));
+                () -> "Expected HTTP status code %d: %s".formatted(response.statusCode(), response.body()));
         Assertions.assertTrue(response.body().startsWith("Test"));
     }
 

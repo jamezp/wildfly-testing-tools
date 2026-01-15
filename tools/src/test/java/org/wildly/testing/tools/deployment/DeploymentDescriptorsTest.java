@@ -109,7 +109,7 @@ public class DeploymentDescriptorsTest {
                             && e.select("name").text().equals("java.io.tmpdir"))
                     .collect(Collectors.toList());
             Assertions.assertEquals(2, elements.size(),
-                    () -> String.format("Expected two java.io.tmpdir properties in %n%s", assetValue));
+                    () -> "Expected two java.io.tmpdir properties in %n%s".formatted(assetValue));
 
             elements = document.select("permission")
                     .stream()
@@ -117,7 +117,7 @@ public class DeploymentDescriptorsTest {
                             && e.select("name").text().equals("test.property"))
                     .collect(Collectors.toList());
             Assertions.assertEquals(1, elements.size(),
-                    () -> String.format("Expected one test.property properties in %n%s", assetValue));
+                    () -> "Expected one test.property properties in %n%s".formatted(assetValue));
         }
     }
 

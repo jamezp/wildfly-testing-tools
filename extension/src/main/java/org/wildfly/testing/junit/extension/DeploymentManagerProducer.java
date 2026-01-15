@@ -30,7 +30,7 @@ public class DeploymentManagerProducer implements ServerResourceProducer {
             throws IllegalArgumentException {
         if (!DeploymentManager.class.isAssignableFrom(clazz)) {
             throw new IllegalArgumentException(
-                    String.format("Type %s is not assignable to %s", clazz.getName(), DeploymentManager.class.getName()));
+                    "Type %s is not assignable to %s".formatted(clazz.getName(), DeploymentManager.class.getName()));
         }
 
         // Get the server from WildFlyExtension and return as managed which will not allow shutting down the server
