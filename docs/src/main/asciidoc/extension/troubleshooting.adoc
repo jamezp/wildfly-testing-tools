@@ -352,7 +352,7 @@ Debug the server during tests:
 
 [source,bash]
 ----
-mvn test -Dwildfly.java.opts="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
+mvn test -Dwildfly.debug
 ----
 
 Then attach your IDE's debugger to port 8787.

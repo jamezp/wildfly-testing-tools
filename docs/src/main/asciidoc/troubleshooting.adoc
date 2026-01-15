@@ -59,10 +59,19 @@ Debug WildFly during tests:
 
 [source,bash]
 ----
-mvn test -Dwildfly.java.opts="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
+mvn test -Dwildfly.debug
 ----
 
-Then attach your IDE's debugger to port 8787. Set `suspend=n` if you don't want WildFly to wait for the debugger before starting.
+Then attach your IDE's debugger to port 8787.
+
+[source,bash]
+----
+mvn test -Dwildfly.debug -Dwildfly.debug.port=5005
+----
+
+Then attach your IDE's debugger to port 5005.
+
+NOTE: The `wildfly.debug` properties only work for standalone mode tests.
 
 == Module-Specific Issues
 

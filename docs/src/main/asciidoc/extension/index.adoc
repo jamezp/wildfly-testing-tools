@@ -392,6 +392,24 @@ This chapter covers all configuration options for {project-name}.
 |String
 |Additional JVM arguments for WildFly
 |None
+
+|`wildfly.debug`
+|boolean
+|An empty value or a value of `true` indicates the server should be started up with remote debugging enabled. +
+*NOTE: This property only works for standalone mode.*
+|`false`
+
+|`wildfly.debug.port`
+|int
+|If `wildfly.debug` is enabled, the port the remote debugger should listen on.
+|`8787`
+
+|`wildfly.debug.suspend`
+|int
+|If `wildfly.debug` is enabled and the value is empty or set to `true`, `suspend=y` will be passed to the remote debug
+arguments. Otherwise, `suspend=n` will be passed.
+|`true`
+
 |===
 
 == System Properties
@@ -574,7 +592,7 @@ Enable remote debugging of WildFly during tests:
 
 [source,bash]
 ----
-mvn test -Dwildfly.java.opts="\"-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787\""
+mvn test -Dwildfly.debug
 ----
 
 Then attach your IDE debugger to port 8787.
@@ -845,7 +863,7 @@ Run tests with remote debugging:
 
 [source,bash]
 ----
-mvn test -Dwildfly.java.opts="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8787"
+mvn test -Dwildfly.debug
 ----
 
 [appendix]
