@@ -123,7 +123,7 @@ public class ServerConfiguration {
             return 8080;
         });
 
-        return String.format("%s://%s:%d", protocol, host, port);
+        return "%s://%s:%d".formatted(protocol, host, port);
     }
 
     /**

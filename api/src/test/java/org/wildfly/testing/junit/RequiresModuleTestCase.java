@@ -70,8 +70,7 @@ public class RequiresModuleTestCase {
         testEvents.assertStatistics((stats) -> stats.skipped(1L));
         testEvents.assertThatEvents().haveExactly(1, EventConditions.event(
                 EventConditions.skippedWithReason(
-                        String.format(
-                                "Module org.wildfly.testing.junit.test.artifact.invalid not found in %s. Disabling test.",
+                        "Module org.wildfly.testing.junit.test.artifact.invalid not found in %s. Disabling test.".formatted(
                                 jbossHome.resolve("modules")))));
     }
 
@@ -120,9 +119,9 @@ public class RequiresModuleTestCase {
         testEvents.assertStatistics((stats) -> stats.skipped(1L));
         testEvents.assertThatEvents().haveExactly(1, EventConditions.event(
                 EventConditions.skippedWithReason(
-                        String.format(
-                                "Module org.wildfly.testing.junit.test.resource-root.invalid not found in %s. Disabling test.",
-                                jbossHome.resolve("modules")))));
+                        "Module org.wildfly.testing.junit.test.resource-root.invalid not found in %s. Disabling test."
+                                .formatted(
+                                        jbossHome.resolve("modules")))));
     }
 
     @Test
@@ -269,7 +268,7 @@ public class RequiresModuleTestCase {
         // Create the JAR with a manifest only
         final Path jarPath = jbossHome.resolve(
                 Path.of("modules", "org", "wildfly", "testing", "junit", "test", moduleName, "main",
-                        String.format("test-%s.jar", version)));
+                        "test-%s.jar".formatted(version)));
         final Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         manifest.getMainAttributes().put(Attributes.Name.IMPLEMENTATION_VERSION, version);

@@ -70,33 +70,33 @@ class TestSupport {
         final var method = validate(testClass, methods);
         // This must be a void return type
         if (!method.getReturnType().equals(Void.TYPE)) {
-            throw new JUnitException(String.format("Method '%s' must return void", method));
+            throw new JUnitException("Method '%s' must return void".formatted(method));
         }
         final int count = method.getParameterCount();
         if (count > 2) {
             throw new JUnitException(
-                    String.format("Method %s has too many parameters. Only two parameters are allowed.", method));
+                    "Method %s has too many parameters. Only two parameters are allowed.".formatted(method));
         }
         if (count == 0) {
-            throw new JUnitException(String.format("Method '%s' must have at least one parameter.", method));
+            throw new JUnitException("Method '%s' must have at least one parameter.".formatted(method));
         }
         final var testDeployment = method.getAnnotation(GenerateDeployment.class);
         final var parameterTypes = method.getParameterTypes();
         final var deploymentType = testDeployment.value() == GenerateDeployment.DeploymentType.INFER
-                ? inferredType(parameterTypes[0]).orElseThrow(() -> new JUnitException(String
-                        .format("Could not infer the type to create for argument %s on method %s. " +
-                                "If this is a custom %s type, please consider using a @DeploymentProducer", parameterTypes[0],
-                                method, Archive.class.getName())))
+                ? inferredType(parameterTypes[0]).orElseThrow(() -> new JUnitException(
+                        ("Could not infer the type to create for argument %s on method %s. " +
+                                "If this is a custom %s type, please consider using a @DeploymentProducer")
+                                .formatted(parameterTypes[0], method, Archive.class.getName())))
                 : testDeployment.value();
         // Check that first parameter is an Archive type
         if (!Archive.class.isAssignableFrom(parameterTypes[0])) {
-            throw new JUnitException(String.format(
-                    "@GenerateDeployment method %s must have an Archive type as the first parameter, but was %s",
-                    method.getName(), parameterTypes[0].getName()));
+            throw new JUnitException(
+                    "@GenerateDeployment method %s must have an Archive type as the first parameter, but was %s"
+                            .formatted(method.getName(), parameterTypes[0].getName()));
         }
         // Validate the parameter type is assignable from the deployment type
         if (!deploymentType.archiveType().isAssignableFrom(parameterTypes[0])) {
-            throw new JUnitException(String.format("Parameter '%s' must be assignable from '%s'", parameterTypes[0],
+            throw new JUnitException("Parameter '%s' must be assignable from '%s'".formatted(parameterTypes[0],
                     deploymentType.archiveType()));
         }
         final TestInfo testInfo;
@@ -104,7 +104,7 @@ class TestSupport {
         if (parameterTypes.length == 2) {
             if (!TestInfo.class.isAssignableFrom(parameterTypes[1])) {
                 throw new JUnitException(
-                        String.format("Parameter '%s' must be assignable from '%s'", parameterTypes[1], TestInfo.class));
+                        "Parameter '%s' must be assignable from '%s'".formatted(parameterTypes[1], TestInfo.class));
             }
             testInfo = new ParameterTestInfo(context);
         } else {
@@ -121,7 +121,7 @@ class TestSupport {
 
             return Optional.of(archive);
         } catch (Exception e) {
-            throw new JUnitException(String.format("Failed to execute deployment method in %s: %s", method.getName(), method),
+            throw new JUnitException("Failed to execute deployment method in %s: %s".formatted(method.getName(), method),
                     e);
         }
     }
@@ -138,17 +138,18 @@ class TestSupport {
         // The return type must be an Archive<?> of some type
         if (!Archive.class.isAssignableFrom(method.getReturnType())) {
             throw new JUnitException(
-                    String.format("Method '%s' must return assignable from %s", method, Archive.class.getName()));
+                    "Method '%s' must return assignable from %s".formatted(method, Archive.class.getName()));
         }
         // A single parameter of type TestInfo is allowed, but not required
         final var parameterTypes = method.getParameterTypes();
         if (parameterTypes.length > 1) {
-            throw new JUnitException(String.format(
-                    "Method %s has too many parameters. Only one parameter of type %s is allowed.", method, TestInfo.class));
+            throw new JUnitException(
+                    "Method %s has too many parameters. Only one parameter of type %s is allowed.".formatted(method,
+                            TestInfo.class));
         }
         if (parameterTypes.length == 1 && !TestInfo.class.isAssignableFrom(parameterTypes[0])) {
-            throw new JUnitException(String.format(
-                    "Method %s parameter must be of type %s, but was %s.", method, TestInfo.class, parameterTypes[0]));
+            throw new JUnitException(
+                    "Method %s parameter must be of type %s, but was %s.".formatted(method, TestInfo.class, parameterTypes[0]));
         }
 
         final TestInfo testInfo;
@@ -167,7 +168,7 @@ class TestSupport {
             }
             return Optional.of(archive);
         } catch (Exception e) {
-            throw new JUnitException(String.format("Failed to execute deployment method in %s: %s", method.getName(), method),
+            throw new JUnitException("Failed to execute deployment method in %s: %s".formatted(method.getName(), method),
                     e);
         }
     }
@@ -176,15 +177,15 @@ class TestSupport {
         // Only one deployment method is allowed
         if (methods.size() > 1) {
             throw new JUnitException(
-                    String.format("Found more than one deployment method in %s: %s", testClass.getName(), methods));
+                    "Found more than one deployment method in %s: %s".formatted(testClass.getName(), methods));
         }
         final var method = methods.get(0);
         if (!Modifier.isStatic(method.getModifiers())) {
             throw new JUnitException(
-                    String.format("Deployment method %s in type %s must be static.", testClass.getName(), method));
+                    "Deployment method %s in type %s must be static.".formatted(testClass.getName(), method));
         }
         if (!method.trySetAccessible()) {
-            throw new JUnitException(String.format("Method '%s' is not accessible", method));
+            throw new JUnitException("Method '%s' is not accessible".formatted(method));
         }
         return method;
     }

@@ -151,9 +151,9 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
 
         // Validate that both annotations are not present
         if (hasWildFlyTest && hasDomainTest) {
-            throw new JUnitException(String.format(
-                    "Test class %s cannot have both @WildFlyTest and @WildFlyDomainTest. Use only one to specify the test mode.",
-                    testClass.getName()));
+            throw new JUnitException(
+                    "Test class %s cannot have both @WildFlyTest and @WildFlyDomainTest. Use only one to specify the test mode."
+                            .formatted(testClass.getName()));
         }
 
         // Determine configuration based on launch type
@@ -234,13 +234,12 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
             // Deploy to server
             final var deploymentResult = serverManager.deploymentManager().deploy(deployment);
             if (!deploymentResult.successful()) {
-                throw new JUnitException(String.format("Failed to deploy %s to server: %s", deploymentName,
+                throw new JUnitException("Failed to deploy %s to server: %s".formatted(deploymentName,
                         deploymentResult.getFailureMessage()));
             }
             DeploymentContext.cache(context, new DeploymentInfo(deploymentName, serverGroups));
         } catch (IOException e) {
-            throw new JUnitException(
-                    String.format("Failed to export archive %s as deployment", deploymentName), e);
+            throw new JUnitException("Failed to export archive %s as deployment".formatted(deploymentName), e);
         }
     }
 
@@ -290,8 +289,8 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
         final Optional<Archive<?>> deploymentProducer = TestSupport.findDeploymentProducerMethod(context);
         if (testDeployment.isPresent() && deploymentProducer.isPresent()) {
             throw new JUnitException(
-                    String.format("Test %s cannot have both @GenerateDeployment and @DeploymentProducer methods. " +
-                            "Use only one deployment method type per test class.", testClass.getName()));
+                    "Test %s cannot have both @GenerateDeployment and @DeploymentProducer methods. Use only one deployment method type per test class."
+                            .formatted(testClass.getName()));
         }
         if (testDeployment.isPresent()) {
             return testDeployment;

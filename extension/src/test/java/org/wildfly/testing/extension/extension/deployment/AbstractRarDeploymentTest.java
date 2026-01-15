@@ -33,7 +33,7 @@ abstract class AbstractRarDeploymentTest {
                 break;
             }
         }
-        Assertions.assertTrue(found, () -> String.format("Expected deployment '%s.rar' to exist in %s",
+        Assertions.assertTrue(found, () -> "Expected deployment '%s.rar' to exist in %s".formatted(
                 getClass().getSimpleName(), deployments));
     }
 }

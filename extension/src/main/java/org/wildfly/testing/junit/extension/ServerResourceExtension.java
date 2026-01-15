@@ -87,7 +87,7 @@ public class ServerResourceExtension
                     .getType(), parameterContext.getParameter().getAnnotations());
         } catch (Throwable e) {
             throw new ParameterResolutionException(
-                    String.format("Failed to resolve parameter '%s'.", parameterContext.getParameter()), e);
+                    "Failed to resolve parameter '%s'.".formatted(parameterContext.getParameter()), e);
         }
     }
 
@@ -105,7 +105,7 @@ public class ServerResourceExtension
         AnnotationSupport.findAnnotatedFields(testClass, ServerResource.class, predicate).forEach(field -> {
             if (Modifier.isFinal(field.getModifiers())) {
                 throw new ExtensionConfigurationException(
-                        String.format("Field '%s' cannot be final for injection.", field));
+                        "Field '%s' cannot be final for injection.".formatted(field));
             }
             // Find the producer which can provide this parameter
             ServerResourceProducer injectionProducer = null;
@@ -117,7 +117,7 @@ public class ServerResourceExtension
             }
             if (injectionProducer == null) {
                 throw new ExtensionConfigurationException(
-                        String.format("Could not find InjectionProducer for field '%s' of type %s.", field, field.getType()
+                        "Could not find InjectionProducer for field '%s' of type %s.".formatted(field, field.getType()
                                 .getName()));
             }
             try {
@@ -126,14 +126,14 @@ public class ServerResourceExtension
                     field.set(testInstance, value);
                 } else {
                     throw new ParameterResolutionException(
-                            String.format("Could not make field %s accessible for injection.", field));
+                            "Could not make field %s accessible for injection.".formatted(field));
                 }
             } catch (Throwable e) {
-                if (e instanceof ParameterResolutionException) {
-                    throw (ParameterResolutionException) e;
+                if (e instanceof ParameterResolutionException pre) {
+                    throw pre;
                 }
                 throw new ParameterResolutionException(
-                        String.format("Could not make field %s accessible for injection.", field), e);
+                        "Could not make field %s accessible for injection.".formatted(field), e);
             }
         });
     }

@@ -61,7 +61,7 @@ public class Modules {
 
             if (isImmutableModulePath(moduleDir)) {
                 throw new IllegalStateException(
-                        String.format("Writing test modules in jboss.home directory %s is not allowed.", jbossHome));
+                        "Writing test modules in jboss.home directory %s is not allowed.".formatted(jbossHome));
             }
         } else {
             String pathElement = null;
@@ -73,12 +73,12 @@ public class Modules {
             }
             if (pathElement == null) {
                 throw new IllegalStateException(
-                        String.format("Writing test modules in module.path directories %s is not allowed.", modulePath));
+                        "Writing test modules in module.path directories %s is not allowed.".formatted(modulePath));
             }
             moduleDir = Path.of(pathElement);
         }
         if (Files.notExists(moduleDir) || !Files.isDirectory(moduleDir)) {
-            throw new IllegalStateException(String.format("Module directory %s is not a directory.", moduleDir));
+            throw new IllegalStateException("Module directory %s is not a directory.".formatted(moduleDir));
         }
 
         return moduleDir;

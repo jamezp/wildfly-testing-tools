@@ -121,11 +121,11 @@ public class RequiresModuleExecutionCondition implements ExecutionCondition {
         // Likely indicates the version could not be resolved.
         if (version.isBlank()) {
             return ConditionEvaluationResult
-                    .enabled(String.format("Could not determine version of module %s", moduleDefinition.path));
+                    .enabled("Could not determine version of module %s".formatted(moduleDefinition.path));
         }
         if (isAtLeastVersion(requiresModule.minVersion(), version)) {
             return ConditionEvaluationResult
-                    .enabled(String.format("Found version %s and required a minimum of version %s. Enabling tests.",
+                    .enabled("Found version %s and required a minimum of version %s. Enabling tests.".formatted(
                             version, requiresModule.minVersion()));
         }
         return ConditionEvaluationResult
@@ -218,7 +218,7 @@ public class RequiresModuleExecutionCondition implements ExecutionCondition {
     }
 
     private static String formatReason(final RequiresModule requiresModule, final String fmt, final Object... args) {
-        String msg = String.format(fmt, args);
+        String msg = fmt.formatted(args);
         if (!requiresModule.issueRef().isBlank()) {
             msg = requiresModule.issueRef() + ": " + msg;
         }

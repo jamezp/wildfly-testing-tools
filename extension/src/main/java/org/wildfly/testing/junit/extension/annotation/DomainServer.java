@@ -32,7 +32,7 @@ import java.net.URI;
  *     public void listOrders() throws Exception {
  *         try (Response response = Client.newClient().target(uri).request().get()) {
  *             Assertions.assertEquals(200, response.getStatus(),
- *                     () -> String.format("Failed to get orders: %s", response.readEntity(String.class)));
+ *                     () -> "Failed to get orders: %s".formatted(response.readEntity(String.class)));
  *         }
  *     }
  * }

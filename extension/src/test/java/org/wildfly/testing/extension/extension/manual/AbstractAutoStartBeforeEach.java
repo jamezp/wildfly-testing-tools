@@ -49,7 +49,7 @@ abstract class AbstractAutoStartBeforeEach implements ManualModeTest {
         final var uri = getUri();
         Assertions.assertNotNull(uri);
         Assertions.assertTrue(uri.toString().endsWith("/test"),
-                () -> String.format("Expected URI to contain the request path /test at the end: %s", uri));
+                () -> "Expected URI to contain the request path /test at the end: %s".formatted(uri));
     }
 
     @Test
@@ -60,7 +60,7 @@ abstract class AbstractAutoStartBeforeEach implements ManualModeTest {
                 .build();
         final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         Assertions.assertEquals(200, response.statusCode(),
-                () -> String.format("Expected HTTP status code %d: %s", response.statusCode(), response.body()));
+                () -> "Expected HTTP status code %d: %s".formatted(response.statusCode(), response.body()));
         Assertions.assertTrue(response.body().startsWith("Test"));
     }
 
