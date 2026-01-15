@@ -15,9 +15,13 @@ import java.net.URI;
 
 /**
  * Qualifies the injection point for a {@link URI} to indicate which server in a domain is being targeted.
+ * <p>
+ * <strong>Note:</strong> This annotation is only used on tests annotated with {@link WildFlyDomainTest}.
+ * It is silently ignored on standalone tests ({@link WildFlyTest}), which can be useful when using
+ * test inheritance where a domain test extends a standalone test.
  *
  * <pre>
- * &#x40;WildlyTest
+ * &#x40;WildFlyDomainTest
  * public class OrderTest {
  *     &#x40;ServerResource
  *     &#x40;DomainServer("server-one")

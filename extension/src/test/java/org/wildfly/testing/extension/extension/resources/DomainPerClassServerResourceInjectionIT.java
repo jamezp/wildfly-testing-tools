@@ -15,17 +15,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.wildfly.plugin.tools.DeploymentManager;
 import org.wildfly.plugin.tools.server.ServerManager;
-import org.wildfly.testing.junit.extension.annotation.Domain;
 import org.wildfly.testing.junit.extension.annotation.RequestPath;
 import org.wildfly.testing.junit.extension.annotation.ServerResource;
-import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
+import org.wildfly.testing.junit.extension.annotation.WildFlyDomainTest;
 
 /**
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
-@WildFlyTest
-@Domain
+@WildFlyDomainTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DomainPerClassServerResourceInjectionIT extends ServerResourceInjection {
 

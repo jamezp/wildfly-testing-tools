@@ -229,6 +229,34 @@ class TestSupport {
 
     }
 
+    /**
+     * Finds the deployment method (either {@link GenerateDeployment} or {@link DeploymentProducer})
+     * and returns the Method reference without invoking it.
+     *
+     * @param context the extension context
+     *
+     * @return the deployment method, or empty if no deployment method exists
+     */
+    static Optional<Method> findDeploymentMethodReference(final ExtensionContext context) {
+        final var testClass = context.getRequiredTestClass();
+
+        // Check for @GenerateDeployment
+        final var generateMethods = AnnotationSupport.findAnnotatedMethods(testClass, GenerateDeployment.class,
+                HierarchyTraversalMode.BOTTOM_UP);
+        if (!generateMethods.isEmpty()) {
+            return Optional.of(validate(testClass, generateMethods));
+        }
+
+        // Check for @DeploymentProducer
+        final var producerMethods = AnnotationSupport.findAnnotatedMethods(testClass, DeploymentProducer.class,
+                HierarchyTraversalMode.BOTTOM_UP);
+        if (!producerMethods.isEmpty()) {
+            return Optional.of(validate(testClass, producerMethods));
+        }
+
+        return Optional.empty();
+    }
+
     private static Optional<GenerateDeployment.DeploymentType> inferredType(final Class<?> methodParameterType) {
         for (final var type : GenerateDeployment.DeploymentType.values()) {
             if (type == GenerateDeployment.DeploymentType.INFER) {

@@ -14,14 +14,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.wildfly.plugin.tools.server.ServerManager;
 import org.wildfly.testing.junit.extension.annotation.ServerResource;
-import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 
 /**
  * Abstract base class for EAR deployment tests. Subclasses only need to provide the deployment method.
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
-@WildFlyTest
 abstract class AbstractEarDeploymentTest {
 
     @ServerResource

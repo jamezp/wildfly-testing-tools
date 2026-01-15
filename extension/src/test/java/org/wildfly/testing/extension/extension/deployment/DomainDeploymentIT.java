@@ -15,21 +15,21 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.wildfly.testing.junit.extension.annotation.DeploymentProducer;
-import org.wildfly.testing.junit.extension.annotation.Domain;
 import org.wildfly.testing.junit.extension.annotation.DomainServer;
 import org.wildfly.testing.junit.extension.annotation.RequestPath;
+import org.wildfly.testing.junit.extension.annotation.ServerGroup;
 import org.wildfly.testing.junit.extension.annotation.ServerResource;
-import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
+import org.wildfly.testing.junit.extension.annotation.WildFlyDomainTest;
 
 /**
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
-@WildFlyTest
-@Domain("main-server-group")
+@WildFlyDomainTest
 public class DomainDeploymentIT {
 
     @DeploymentProducer
+    @ServerGroup("main-server-group")
     public static WebArchive createDeployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addClasses(TestServlet.class);

@@ -219,11 +219,11 @@ Test deployments on a domain controller:
 
 [source,java]
 ----
-@WildFlyTest
-@Domain("main-server-group")
+@WildFlyDomainTest
 public class DomainTest {
 
     @DeploymentProducer
+    @ServerGroup("main-server-group")
     public static WebArchive deployment() {
         return ShrinkWrap.create(WebArchive.class)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
@@ -267,7 +267,8 @@ To use domain mode testing:
 ----
 
 3. **Use the correct annotations**:
-   - `@Domain("server-group-name")` on the test class (you can specify multiple server groups: `@Domain({"group1", "group2"})`)
+   - `@WildFlyDomainTest` on the test class
+   - `@ServerGroup("server-group-name")` on the deployment method (you can specify multiple server groups: `@ServerGroup({"group1", "group2"})`)
    - `@DomainServer("server-name")` on `@ServerResource` fields to target specific servers
 
 NOTE: Domain tests are automatically tagged with `@Tag("domain-test")`. You can use this to run domain tests separately: `mvn test -Dgroups=domain-test`

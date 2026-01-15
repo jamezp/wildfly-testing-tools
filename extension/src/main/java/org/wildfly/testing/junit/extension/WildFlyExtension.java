@@ -6,6 +6,7 @@
 package org.wildfly.testing.junit.extension;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -24,8 +25,10 @@ import org.wildfly.plugin.tools.UndeployDescription;
 import org.wildfly.plugin.tools.server.Configuration;
 import org.wildfly.plugin.tools.server.ServerManager;
 import org.wildfly.plugin.tools.server.ServerManagerListener;
-import org.wildfly.testing.junit.extension.annotation.Domain;
 import org.wildfly.testing.junit.extension.annotation.ManualMode;
+import org.wildfly.testing.junit.extension.annotation.ServerGroup;
+import org.wildfly.testing.junit.extension.annotation.WildFlyDomainTest;
+import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 import org.wildfly.testing.junit.extension.api.DomainConfigurationFactory;
 import org.wildfly.testing.junit.extension.api.ServerConfiguration;
 import org.wildfly.testing.junit.extension.api.StandaloneConfigurationFactory;
@@ -139,12 +142,23 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
     }
 
     private ServerManager createServer(final ExtensionContext context) {
-        // Check for @Domain annotation
-        final Optional<Domain> domain = AnnotationSupport
-                .findAnnotation(context.getRequiredTestClass(), Domain.class);
+        // Check for both @WildFlyTest and @WildFlyDomainTest annotations
+        final Class<?> testClass = context.getRequiredTestClass();
+        final boolean hasWildFlyTest = AnnotationSupport
+                .findAnnotation(testClass, WildFlyTest.class).isPresent();
+        final boolean hasDomainTest = AnnotationSupport
+                .findAnnotation(testClass, WildFlyDomainTest.class).isPresent();
+
+        // Validate that both annotations are not present
+        if (hasWildFlyTest && hasDomainTest) {
+            throw new JUnitException(String.format(
+                    "Test class %s cannot have both @WildFlyTest and @WildFlyDomainTest. Use only one to specify the test mode.",
+                    testClass.getName()));
+        }
+
         // Determine configuration based on launch type
         final Configuration<?> configuration;
-        if (domain.isPresent()) {
+        if (hasDomainTest) {
             configuration = DomainConfigurationFactory.create()
                     .configuration(context);
         } else {
@@ -196,13 +210,15 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
         // Invoke deployment method to get Archive
         final Archive<?> archive = deploymentArchive.get();
         final String deploymentName = archive.getName();
-        // Check for @Domain annotation
-        final Optional<Domain> domain = AnnotationSupport.findAnnotation(context.getRequiredTestClass(), Domain.class);
+        // Check for @WildFlyDomainTest and get server groups from deployment method
+        final boolean isDomainTest = AnnotationSupport
+                .findAnnotation(context.getRequiredTestClass(), WildFlyDomainTest.class).isPresent();
         final Set<String> serverGroups;
-        if (domain.isPresent()) {
-            serverGroups = Set.of(domain.get().value());
+        if (isDomainTest) {
+            serverGroups = resolveServerGroups(context);
             if (serverGroups.isEmpty()) {
-                throw new JUnitException("No server groups defined for domain to deploy to.");
+                throw new JUnitException("No server groups defined for domain deployment. " +
+                        "Add @ServerGroup annotation to the deployment method.");
             }
         } else {
             serverGroups = Set.of();
@@ -230,12 +246,12 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
 
     private void undeploy(final ExtensionContext context, final ServerManager serverManager,
             final DeploymentInfo deploymentInfo) {
-        // Check for @Domain annotation
-        final Optional<Domain> domain = AnnotationSupport
-                .findAnnotation(context.getRequiredTestClass(), Domain.class);
+        // Check for @WildFlyDomainTest annotation
+        final boolean isDomainTest = AnnotationSupport
+                .findAnnotation(context.getRequiredTestClass(), WildFlyDomainTest.class).isPresent();
         final String deploymentName = deploymentInfo.deploymentName();
         final UndeployDescription undeployDescription = UndeployDescription.of(deploymentName);
-        if (domain.isPresent()) {
+        if (isDomainTest) {
             undeployDescription.addServerGroups(deploymentInfo.serverGroup());
         }
         // Undeploy from server
@@ -281,6 +297,27 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
             return testDeployment;
         }
         return deploymentProducer;
+    }
+
+    /**
+     * Resolves server groups from the {@link ServerGroup @ServerGroup} annotation on the deployment method.
+     *
+     * @param context the extension context
+     *
+     * @return set of server group names, or empty set if no {@link ServerGroup @ServerGroup} annotation found
+     */
+    private static Set<String> resolveServerGroups(final ExtensionContext context) {
+        final Optional<java.lang.reflect.Method> deploymentMethod = TestSupport.findDeploymentMethodReference(context);
+
+        if (deploymentMethod.isEmpty()) {
+            return Set.of();
+        }
+
+        final Method method = deploymentMethod.get();
+        final Optional<ServerGroup> serverGroupAnnotation = AnnotationSupport.findAnnotation(method, ServerGroup.class);
+
+        return serverGroupAnnotation.map(serverGroup -> Set.of(serverGroup.value())).orElseGet(Set::of);
+
     }
 
     /**

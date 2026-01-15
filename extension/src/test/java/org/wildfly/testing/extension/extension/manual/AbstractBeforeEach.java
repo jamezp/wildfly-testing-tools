@@ -12,13 +12,11 @@ import org.junit.jupiter.api.Test;
 import org.wildfly.plugin.tools.server.ServerManager;
 import org.wildfly.testing.junit.extension.annotation.ManualMode;
 import org.wildfly.testing.junit.extension.annotation.ServerResource;
-import org.wildfly.testing.junit.extension.annotation.WildFlyTest;
 
 /**
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
-@WildFlyTest
 @ManualMode
 abstract class AbstractBeforeEach implements ManualModeTest {
 
