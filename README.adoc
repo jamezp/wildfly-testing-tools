@@ -2,7 +2,11 @@
 
 Various testing tools, utilities and JUnit extensions for testing with a WildFly based server.
 
-== Usage
+== Documentation
+
+For complete documentation, see https://wildfly-extras.github.io/wildfly-testing-tools
+
+== Quick Start
 
 To use the tooling you can simply import the Bill of Materials POM:
 
@@ -21,13 +25,14 @@ To use the tooling you can simply import the Bill of Materials POM:
 </dependencyManagement>
 ----
 
+== Modules
+
 === JUnit API
 
 The JUnit API contains annotations for skipping tests if minimal module requirements are not met. It also supports
-injecting the value of the JBoss Home, server, directory. This can be used with JUnit 5+ and the WildFly JUnit Extension
+injecting the value of the JBoss Home directory. This can be used with JUnit 5+ and the WildFly JUnit Extension
 or WildFly Arquillian.
 
-.JUnit API
 [source,xml]
 ----
 <dependency>
@@ -43,7 +48,6 @@ tests have completed.
 
 You can optionally deploy test applications per-test to the server. Only one deployment can be defined per-test.
 
-.JUnit Extension
 [source,xml]
 ----
 <dependency>
@@ -55,11 +59,10 @@ You can optionally deploy test applications per-test to the server. Only one dep
 === Testing Tools
 
 The testing tools can be used to help create deployment descriptors or simple utilities for creating deployments. It
-can also create modules based and delete the created module.
+can also create modules and delete created modules.
 
-This can be used for any Shrinkwrap based testing.
+This can be used for any ShrinkWrap based testing.
 
-.Testing Tools
 [source,xml]
 ----
 <dependency>
@@ -68,291 +71,61 @@ This can be used for any Shrinkwrap based testing.
 </dependency>
 ----
 
-== Annotations
+== Releasing
 
-=== `@WildFlyTest`
+Releasing the project requires permission to deploy to Maven Central see https://central.sonatype.org/publish/requirements/[Maven Central Release Requirements].
+Once everything is setup, you simply need to run the `./release.sh` script. There are two required parameters:
 
-Any test requiring a server to be started must use this annotation. The configuration options can also be overridden
-via the command line.
+1. `-r` or `--release` which is the version you want to release
+2. `-d` or `--development` which is the next development version.
 
-=== `@GenerateDeployment`
+By default the release version cannot contain `SNAPSHOT` and the development version, must container `SNAPSHOT`.
 
-This annotation can be placed on a static method which would create a deployment and process it. The first parameter
-of the method must be a `org.jboss.shrinkwrap.api.Archive` or subtype. You can have an optional second parameter which
-is of type `org.junit.jupiter.api.TestInfo`.
-
-[source,java]
+[source,bash]
+.Example Command
 ----
-@GenerateDeployment
-public static void generate(final WebArchive war) {
-    war.addClasses(TestServlet.class, RestResource.class, RestActivator.class)
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-}
+./release -r 1.0.0.Final -d 1.0.1.Final-SNAPSHOT
 ----
 
-IMPORTANT: A test can have either a `@GenerateDeployment` method or a `@DeploymentProcducer` method, but not both or
-an error will occur.
-
-=== `@DeploymentProducer`
-
-This annotation can be placed on a static method which is meant to create a deployment for the server. Only one
-deployment producer can be defined per test. The method can have an optional parameter of type `org.junit.jupiter.api.TestInfo`.
-
-[source,java]
-----
-@DeploymentProducer
-public static WebArchive deployment(final TestInfo testInfo) {
-    return ShrinkWrap.create(WebArchive.class, testInfo.getTestClass().orElse("test") + ".war")
-            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-}
-----
-
-IMPORTANT: A test can have either a `@DeploymentProcducer` method or a `@GenerateDeployment` method, but not both or
-an error will occur.
-
-=== `@Domain`
-
-Indicates the test should start a domain server. If there is a deployment for the test, at least one server group must
-be defined in the `@Domain` annotation.
-
-NOTE: The `@Domain` annotation automatically adds a `domain-test` tag, `@Tag("domain-test")`. This allows for easier
-filtering of tests as you cannot mix domain and standalone tests in the same execution.
-
-[source,java]
-----
-@WildFlyTest
-@Domain("main-server-group")
-class DomainTest {
-
-    @DeploymentProducer
-    public static WebArchive deployment() {
-        return ShrinkWrap.create(WebArchive.class)
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-    }
-
-    @ServerResource
-    @DomainServer("server-one")
-    private URI uri;
-
-    @Test
-    void checkConnection() {
-
-    }
-}
-----
-
-=== `@ManualMode`
-
-This annotation can be used to indicate a test can manage the lifecycle of a server. If the value on the annotation is
-not set or set to `false`, the server will not be started once the test starts. The test is responsible for starting
-and stopping the server.
-
-[source,java]
-----
-@WildFlyTest
-@ManualMode
-class ManualModeTest {
-
-    @DeploymentProducer
-    public static WebArchive deployment() {
-        return ShrinkWrap.create(WebArchive.class)
-                .addClasses(TestServlet.class)
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-    }
-
-    @ServerResource
-    private ServerManager serverManager;
-
-    @Test
-    void checkServer() {
-        serverManager.start();
-        Assertions.assertTrue(serverManager.isRunning(), () -> String.format("Server %s should be running, but is not.", serverManager));
-        serverManager.shudown();
-    }
-}
-----
-
-You can set the value of the `true` to have the server auto-start.
-
-[source,java]
-----
-@WildFlyTest
-@ManualMode(true)
-class ManualModeTest {
-
-    @DeploymentProducer
-    public static WebArchive deployment() {
-        return ShrinkWrap.create(WebArchive.class)
-                .addClasses(TestServlet.class)
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-    }
-
-    @ServerResource
-    private static ServerManager serverManager;
-    private static String restorePath;
-
-    @BeforeAll
-    static void snapshot() throws Exception {
-        restorePath = serverManager.takeSnapshot();
-    }
-
-    @AfterAll
-    public static void restore() throws Exception {
-        if (restorePath != null) {
-            final ModelNode op = Operations.createOperation("reload");
-            op.get("server-config").set(restorePath);
-            serverManager.executeReload(op);
-            serverManager.waitFor(30L, TimeUnit.SECONDS);
-            serverManager.executeOperation(Operations.createOperation("write-config"));
-        }
-    }
-
-    @Test
-    void checkServer() {
-        Assertions.assertTrue(serverManager.isRunning(), () -> String.format("Server %s should be running, but is not.", serverManager));
-    }
-}
-----
-
-=== `@ServerResource`
-
-This annotation can be used on method parameters or fields to inject various resources. The following resources can be
-injected.
+=== Supported Arguments
 
 |===
-|Type |Description
+|Argument | Requires Value | Description
 
-|`org.wildfly.plugin.tools.server.ServerManager`
-|The server manager used to manage the lifecycle of the server. You will not be able to stop the server, but you can
-perform other management tasks.
+| `-d`, `--development`
+| Yes
+| The next version for the development cycle.
 
-|`java.net.URI`
-|This is an HTTP based URI. If a deployment is present, the URI will include the context path for the deployment.
+| `-f`, `--force`
+| No
+| Forces to allow a SNAPSHOT suffix in release version and not require one for the development version.
+
+| `-h`, `--help`
+| N/A
+| Displays this help
+
+| `--notes-start-tag`
+| Unused
+| Passes the `--notes-from-tag` and the argument to the `gh create release` command.
+
+| `-p`, `--prerelease`
+| Unused
+| Passes the `--prerelease` to the `gh create release` command.
+
+| `-r`, `--release`
+| Yes
+| The version to be released. Also used for the tag.
+
+| `--dry-run`
+| No
+| Executes the release in as a dry-run. Nothing will be updated or pushed.
+
+| `-v`, `--verbose`
+| No
+| Prints verbose output.
 
 |===
 
 
-=== `@RequiresModule`
+Any additional arguments are considered arguments for the Maven command.
 
-The `@RequiresModule` annotation can be used on a class or test method and will disable a test if the required module
-is not found. There is also an option to define minimum version of a module required for the test to be enabled.
-
-.Example
-[source,java]
-----
-@WildFlyTest
-@RequiresModule("org.jboss.as.ejb3")
-public class Ejb3Test {
-
-    @Test
-    @RequiresModule(value = "org.jboss.as.ejb3", minVersion = "32.0.0.Beta1",
-        issueRef = "https://issues.redhat.com/browse/WFLY-1", reason = "This test only works on WildFly 32 or higher")
-    public void ejbNewFeature() {
-
-    }
-}
-----
-
-The `minVersion`, `issueRef` and `reason` are all optional. The `value`, which is the module name, is required. The
-`issueRef` and `reason` are used for the reason text when the test is disabled.
-
-This is a repeatable annotation. When more than one `@RequiresModule` is found, all conditions must be met for a test
-to be enabled. If you want only one condition to be met, use the `@AnyOf` annotation.
-
-=== `@AnyOf`
-
-The `@AnyOf` annotation is used to define one or more `@RequiresModule` annotations and only one of the conditions needs
-to be met to enable a test.
-
-.Example
-[source,java]
-----
-@WildFlyTest
-@ApplicationScoped
-public class RestTest {
-
-    @Test
-    @AnyOf({
-        @RequiresModule("org.jboss.resteasy.resteasy-client"),
-        @RequiresModule("org.jboss.resteasy.resteasy-vertx-client")
-    })
-    public void simpleResource() {
-
-    }
-}
-----
-
-The above test will execute if either the `org.jboss.resteasy.resteasy-client` or `org.jboss.resteasy.resteasy-vertx-client`
-exist.
-
-=== `@JBossHome`
-
-The `@JBossHome` annotation is a simple helper annotation for injecting a `java.lang.String`, `java.nio.file.Path` or
-`java.io.File` parameter with the JBoss Home directory. First the `jboss.home` system property is checked. If not found,
-the `JBOSS_HOME` environment variable is checked. Finally, the `jboss.home.dir` is checked. If neither are set a
-`org.junit.jupiter.api.extension.ParameterResolutionException` is thrown.
-
-== Configuration Properties
-
-Configuration properties can be defined as system properties or in the
-https://docs.junit.org/current/user-guide/#running-tests-config-params[JUnit configuration options].
-
-|===
-|Property |Description |Default Value
-
-|`jboss.home`
-|This is a requirement parameter. If the system property or configuration property is not found, the `JBOSS_HOME`
-environment variable is checked. If that is not found, the configuration property `jboss.home.dir` is checked.
-|
-
-|`wildfly.java.home`
-|Set this to a different Java Runtime Environment if you do not want to use the current JVM.
-|The current `java.home` value.
-
-|`wildfly.module.path`
-|An alternate module path for JBoss Modules.
-|`${jboss.home}/modules`
-
-|`wildfly.timeout`
-|The timeout, in seconds, used for starting and shutting down the server. If the server does not start or shutdown
-within this time, an exception is thrown.
-| 60
-
-|`wildfly.http.protocol`
-|The protocol used for creating an HTTP connection.
-| http
-
-|`wildfly.http.host`
-|The host used for the creating an HTTP connection
-|localhost
-
-|`wildfly.http.port`
-|The port used for the creating an HTTP connection
-|8080
-
-|===
-
-== Extending
-
-You can extend the resource injection via the `@ServerResource` annotation by implementing a
-`org.wildfly.testing.junit.extension.api.ServerResourceProducer`.
-
-[source,java]
-----
-@MetaInfServices
-public class RestClientProducer implements ServerResourceProducer {
-    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create("Rest.Client");
-
-    @Override
-    public boolean canInject(final ExtensionContext context, final Class<?> clazz, final Annotation... annotations) {
-        return Client.class.isAssignableFrom(clazz);
-    }
-
-    @Override
-    public Object produce(final ExtensionContext context, final Class<?> clazz, final Annotation... annotations)
-            throws IllegalArgumentException {
-        final ExtensionContext.Store store = context.getStore(ExtensionContext.StoreScope.LAUNCHER_SESSION, NAMESPACE);
-        return store.computeIfAbsent("rest-client", (c) -> ClientBuilder.newClient(), Client.class);
-    }
-}
-----
