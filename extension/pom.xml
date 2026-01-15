@@ -116,7 +116,7 @@
                             <goal>verify</goal>
                         </goals>
                         <configuration>
-                            <excludedGroups>domain-test</excludedGroups>
+                            <excludedGroups>domain</excludedGroups>
                         </configuration>
                     </execution>
                     <execution>
@@ -126,7 +126,7 @@
                             <goal>verify</goal>
                         </goals>
                         <configuration>
-                            <groups>domain-test</groups>
+                            <groups>domain</groups>
                         </configuration>
                     </execution>
                 </executions>

@@ -22,7 +22,7 @@ import org.wildfly.testing.junit.extension.WildFlyExtension;
  * This annotation is used in conjunction with {@link ServerGroup} to specify deployment targets
  * and {@link DomainServer} to qualify resource injection for specific servers.
  * <p>
- * Domain tests are automatically tagged with {@code "domain-test"} to allow selective test execution.
+ * Domain tests are automatically tagged with {@code "domain"} to allow selective test execution.
  * You cannot mix domain and standalone tests in the same execution, unless the all tests are {@link ManualMode} tests
  * and the {@link ManualMode#value()} is set to {@code false}.
  *
@@ -59,7 +59,7 @@ import org.wildfly.testing.junit.extension.WildFlyExtension;
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Tag("domain-test")
+@Tag("domain")
 @ExtendWith(WildFlyExtension.class)
 public @interface WildFlyDomainTest {
 }
