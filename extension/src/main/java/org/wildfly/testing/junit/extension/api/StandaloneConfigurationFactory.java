@@ -35,6 +35,9 @@ import org.wildfly.plugin.tools.server.StandaloneConfiguration;
  * <li>{@code wildfly.java.opts} - Additional JVM arguments for the server</li>
  * <li>{@code wildfly.http.protocol} - HTTP protocol (http or https)</li>
  * <li>{@code wildfly.http.port} - HTTP/HTTPS port</li>
+ * <li>{@code wildfly.debug} - Enable remote debugging (true if empty or "true")</li>
+ * <li>{@code wildfly.debug.port} - Remote debug port (default: 8787)</li>
+ * <li>{@code wildfly.debug.suspend} - Suspend on startup (default: true)</li>
  * </ul>
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
@@ -73,6 +76,24 @@ public class StandaloneConfigurationFactory {
                 commandBuilder.addJavaOption("-Djboss.%s.port=%d".formatted(protocolOpt.get(), port));
             } else {
                 commandBuilder.addJavaOption("-Djboss.http.port=%d".formatted(port));
+            }
+        }
+        // Check the context parameters for wildfly.debug, wildfly.debug.port and wildfly.debug.suspend
+        final var debugProperty = context.getConfigurationParameter("wildfly.debug");
+        if (debugProperty.isPresent()) {
+            final var debugEnabled = debugProperty.get().isEmpty() || Boolean.parseBoolean(debugProperty.get());
+            if (debugEnabled) {
+                final int port = context.getConfigurationParameter("wildfly.debug.port")
+                        .map(Integer::parseInt).orElse(8787);
+                final boolean suspend = context.getConfigurationParameter("wildfly.debug.suspend")
+                        .map((value) -> {
+                            if (value.isEmpty()) {
+                                return true;
+                            }
+                            return Boolean.parseBoolean(value);
+                        })
+                        .orElse(true);
+                commandBuilder.setDebug(suspend, port);
             }
         }
 
