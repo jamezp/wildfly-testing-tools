@@ -55,6 +55,9 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
 
     @Override
     public void beforeAll(final ExtensionContext context) throws Exception {
+        // Validate test mode annotations first - runs for every test class
+        validateTestModeAnnotations(context);
+
         // Start server (if not already started) - shared across all test classes
         final ServerManager serverManager = getOrCreateServerManager(context);
 
@@ -141,22 +144,33 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
         return Optional.ofNullable(resource).map(ServerResource::get);
     }
 
-    private ServerManager createServer(final ExtensionContext context) {
-        // Check for both @WildFlyTest and @WildFlyDomainTest annotations
+    /**
+     * Validates that a test class doesn't have conflicting test mode annotations.
+     *
+     * @param context the extension context
+     *
+     * @throws JUnitException if both @WildFlyTest and @WildFlyDomainTest are present
+     */
+    private void validateTestModeAnnotations(final ExtensionContext context) {
         final Class<?> testClass = context.getRequiredTestClass();
         final boolean hasWildFlyTest = AnnotationSupport
                 .findAnnotation(testClass, WildFlyTest.class).isPresent();
         final boolean hasDomainTest = AnnotationSupport
                 .findAnnotation(testClass, WildFlyDomainTest.class).isPresent();
 
-        // Validate that both annotations are not present
         if (hasWildFlyTest && hasDomainTest) {
             throw new JUnitException(
                     "Test class %s cannot have both @WildFlyTest and @WildFlyDomainTest. Use only one to specify the test mode."
                             .formatted(testClass.getName()));
         }
+    }
 
+    private ServerManager createServer(final ExtensionContext context) {
         // Determine configuration based on launch type
+        final Class<?> testClass = context.getRequiredTestClass();
+        final boolean hasDomainTest = AnnotationSupport
+                .findAnnotation(testClass, WildFlyDomainTest.class).isPresent();
+
         final Configuration<?> configuration;
         if (hasDomainTest) {
             configuration = DomainConfigurationFactory.create()
