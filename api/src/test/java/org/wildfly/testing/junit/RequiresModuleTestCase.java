@@ -23,7 +23,7 @@ import org.wildfly.testing.junit.annotation.JBossHome;
 /**
  * Tests for the {@link org.wildfly.testing.junit.annotation.RequiresModule} annotation.
  *
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 @Tag("env.var")
 @Tag("system.property")

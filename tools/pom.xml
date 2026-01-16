@@ -16,7 +16,7 @@
 
     <artifactId>wildfly-testing-tools</artifactId>
     <name>WildFly Testing Tools</name>
-    <description>Testing utilities WildFly. These includes adding deployment descriptors and modules to WildFly for testing.</description>
+    <description>Testing utilities for WildFly. These includes adding deployment descriptors and modules to WildFly for testing.</description>
 
     <dependencyManagement>
         <dependencies>

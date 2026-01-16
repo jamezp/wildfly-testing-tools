@@ -37,7 +37,6 @@ public class JBossHomeParameterResolver implements ParameterResolver {
     @Override
     public Object resolveParameter(final ParameterContext parameterContext, final ExtensionContext extensionContext)
             throws ParameterResolutionException {
-        // TODO (jrp) look at how we did this before
         final Optional<Path> value = Support.resolveJBossHome(extensionContext);
         if (value.isEmpty()) {
             throw new ParameterResolutionException(

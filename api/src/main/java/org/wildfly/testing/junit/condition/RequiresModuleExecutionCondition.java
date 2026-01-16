@@ -26,6 +26,7 @@ import org.jboss.logging.Logger;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.commons.JUnitException;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.wildfly.plugin.tools.VersionComparator;
 import org.wildfly.testing.junit.annotation.AnyOf;
@@ -149,7 +150,11 @@ public class RequiresModuleExecutionCondition implements ExecutionCondition {
             final DocumentBuilder builder = factory.newDocumentBuilder();
             final org.w3c.dom.Document document = builder.parse(in);
             final var moduleNode = document.getDocumentElement();
-            name = moduleNode.getAttributes().getNamedItem("name").getTextContent();
+            final var nameAttr = moduleNode.getAttributes().getNamedItem("name");
+            if (nameAttr == null) {
+                throw new JUnitException("Malformed module.xml: missing 'name' attribute in " + moduleXmlFile);
+            }
+            name = nameAttr.getTextContent();
             final var resources = document.getElementsByTagName("resources");
             if (resources.getLength() > 0) {
                 // Use only the first resources, which there should only be one of
@@ -159,14 +164,25 @@ public class RequiresModuleExecutionCondition implements ExecutionCondition {
                     final var node = nodes.item(i);
                     if (node.getNodeName().equals("artifact")) {
                         // Use the Maven GAV where the third entry should be the version
-                        final var artifactName = node.getAttributes().getNamedItem("name").getTextContent();
+                        final var artifactNameAttr = node.getAttributes().getNamedItem("name");
+                        if (artifactNameAttr == null) {
+                            throw new JUnitException(
+                                    "Malformed module.xml: 'artifact' element missing 'name' attribute in " + moduleXmlFile);
+                        }
+                        final var artifactName = artifactNameAttr.getTextContent();
                         final var gav = artifactName.split(":");
                         if (gav.length > 2) {
                             version = sanitizeVersion(gav[2]);
                         }
                         break;
                     } else if (node.getNodeName().equals("resource-root")) {
-                        final String path = node.getAttributes().getNamedItem("path").getTextContent();
+                        final var pathAttr = node.getAttributes().getNamedItem("path");
+                        if (pathAttr == null) {
+                            throw new JUnitException(
+                                    "Malformed module.xml: 'resource-root' element missing 'path' attribute in "
+                                            + moduleXmlFile);
+                        }
+                        final String path = pathAttr.getTextContent();
                         final Path parent = moduleXmlFile.getParent();
                         final Path jar = parent == null ? Path.of(path) : parent.resolve(path);
                         try (JarFile jarFile = new JarFile(jar.toFile())) {

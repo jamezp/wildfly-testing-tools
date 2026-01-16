@@ -5,6 +5,8 @@
 
 package org.wildfly.testing.tools.xml;
 
+import java.io.OutputStream;
+import java.io.Writer;
 import java.util.Iterator;
 import java.util.stream.Stream;
 
@@ -14,16 +16,32 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 /**
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * An {@link XMLStreamWriter} that automatically indents XML output for improved readability.
+ * <p>
+ * This writer delegates to an underlying {@link XMLStreamWriter} and tracks the current depth
+ * to provide proper indentation for nested elements. Each level of nesting is indented with
+ * four spaces.
+ * </p>
+ *
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 class IndentingXmlWriter implements CloseableXMLStreamWriter, XMLStreamConstants {
 
     private static final String SPACES = "    ";
+    private static final javax.xml.stream.XMLOutputFactory XML_OUTPUT_FACTORY = javax.xml.stream.XMLOutputFactory.newInstance();
 
     private final XMLStreamWriter delegate;
     private int index;
     private int state = START_DOCUMENT;
     private boolean indentEnd;
+
+    IndentingXmlWriter(final OutputStream out) throws XMLStreamException {
+        this(XML_OUTPUT_FACTORY.createXMLStreamWriter(out, "utf-8"));
+    }
+
+    IndentingXmlWriter(final Writer writer) throws XMLStreamException {
+        this(XML_OUTPUT_FACTORY.createXMLStreamWriter(writer));
+    }
 
     IndentingXmlWriter(final XMLStreamWriter delegate) {
         this.delegate = delegate;

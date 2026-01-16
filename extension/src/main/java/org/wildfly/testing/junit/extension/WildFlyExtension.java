@@ -265,7 +265,7 @@ public class WildFlyExtension implements BeforeAllCallback, AfterAllCallback {
         final String deploymentName = deploymentInfo.deploymentName();
         final UndeployDescription undeployDescription = UndeployDescription.of(deploymentName);
         if (isDomainTest) {
-            undeployDescription.addServerGroups(deploymentInfo.serverGroup());
+            undeployDescription.addServerGroups(deploymentInfo.serverGroups());
         }
         // Undeploy from server
         try {

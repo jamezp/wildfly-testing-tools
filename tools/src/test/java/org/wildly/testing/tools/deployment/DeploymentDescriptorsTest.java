@@ -32,7 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.wildfly.testing.tools.deployment.DeploymentDescriptors;
 
 /**
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 public class DeploymentDescriptorsTest {
 

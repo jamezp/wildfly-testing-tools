@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 class ModuleEnvironment {
 

@@ -15,7 +15,7 @@ import org.wildfly.testing.junit.annotation.JBossHome;
 
 /**
  *
- * @author <a href="mailto:jpekrins@ibm.com">James R. Perkins</a>
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 @Tag("env.var")
 @Tag("system.property")

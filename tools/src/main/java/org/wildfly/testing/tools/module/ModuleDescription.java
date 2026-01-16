@@ -24,7 +24,7 @@ import org.wildfly.testing.tools.xml.CloseableXMLStreamWriter;
  * directory cannot be deleted, a {@linkplain Runtime#addShutdownHook(Thread) shutdown hook} will be added to delete the
  * module when the JVM exits. This typically happens on Windows as the module loader holds a lock on the resources.
  *
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 @SuppressWarnings("unused")
 public final class ModuleDescription implements AutoCloseable, Comparable<ModuleDescription> {

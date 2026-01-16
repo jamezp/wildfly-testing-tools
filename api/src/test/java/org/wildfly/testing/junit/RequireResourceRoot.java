@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.wildfly.testing.junit.annotation.RequiresModule;
 
 /**
- * @author <a href="mailto:jpekrins@ibm.com">James R. Perkins</a>
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 @SuppressWarnings("NewClassNamingConvention")
 @RequiresModule("org.wildfly.testing.junit.test.resource-root")

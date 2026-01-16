@@ -30,7 +30,7 @@ To use the tooling you can simply import the Bill of Materials POM:
 === JUnit API
 
 The JUnit API contains annotations for skipping tests if minimal module requirements are not met. It also supports
-injecting the value of the JBoss Home directory. This can be used with JUnit 5+ and the WildFly JUnit Extension
+injecting the value of the JBoss Home directory. This can be used with JUnit 6+ and the WildFly JUnit Extension
 or WildFly Arquillian.
 
 [source,xml]

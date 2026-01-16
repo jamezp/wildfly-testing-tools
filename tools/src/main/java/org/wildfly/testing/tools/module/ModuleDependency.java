@@ -15,7 +15,7 @@ import java.util.Set;
 /**
  * A module dependency used for the {@link ModuleBuilder}.
  *
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 public class ModuleDependency implements Comparable<ModuleDependency> {
 
@@ -175,7 +175,7 @@ public class ModuleDependency implements Comparable<ModuleDependency> {
     /**
      * Builds a module dependency.
      *
-     * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+     * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
      */
     @SuppressWarnings("unused")
     public static class Builder {
