@@ -217,6 +217,7 @@ public class UriProducer implements ServerResourceProducer {
             }
             return address.add("subsystem", "undertow");
         } catch (IOException ignore) {
+            // If we cannot read the deployment archive, fall back to the simple address
         }
         return Operations.createAddress("deployment", deploymentName, "subsystem", "undertow");
     }

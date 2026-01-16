@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 /**
  * Utilities for JBoss Modules.
  *
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 public class Modules {
 

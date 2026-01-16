@@ -14,27 +14,55 @@ import java.lang.annotation.Target;
 import java.net.URI;
 
 /**
- * Qualifies the injection point for a {@link jakarta.ws.rs.client.WebTarget} with a relative path with a prefix of
- * {@link SeBootstrap.Configuration#baseUriBuilder()}.
+ * Qualifies a {@link URI} injection point with a relative path that is appended to the deployment's base URI.
+ * This annotation is used in conjunction with {@link ServerResource} to create URIs that point to specific
+ * endpoints within your deployed application.
+ * <p>
+ * The path specified in this annotation is appended to the base URI of the deployment, handling slashes
+ * automatically. For example, if the deployment base URI is {@code http://localhost:8080/myapp} and you
+ * specify {@code @RequestPath("/api/users")}, the resulting URI will be {@code http://localhost:8080/myapp/api/users}.
+ * </p>
+ *
+ * <p>
+ * <strong>Example usage with field injection:</strong>
+ * </p>
  *
  * <pre>
- * &#x40;RestBootstrap(OrderApplication.class)
+ * &#x40;WildFlyTest
  * public class OrderTest {
- *     &#x40;Inject
- *     &#x40;RequestPath("/orders")
- *     private WebTarget ordersTarget;
+ *     &#x40;ServerResource
+ *     &#x40;RequestPath("/api/orders")
+ *     private URI ordersUri;
  *
  *     &#x40;Test
- *     public void listOrders() throws Exception {
- *         try (Response response = ordersTarget.request().get()) {
- *             Assertions.assertEquals(200, response.getStatus(),
- *                     () -> "Failed to get orders: %s".formatted(response.readEntity(String.class)));
- *         }
+ *     public void testGetOrders() throws Exception {
+ *         HttpClient client = HttpClient.newHttpClient();
+ *         HttpRequest request = HttpRequest.newBuilder(ordersUri).GET().build();
+ *         HttpResponse&lt;String&gt; response = client.send(request, HttpResponse.BodyHandlers.ofString());
+ *         Assertions.assertEquals(200, response.statusCode());
+ *     }
+ * }
+ * </pre>
+ *
+ * <p>
+ * <strong>Example usage with parameter injection:</strong>
+ * </p>
+ *
+ * <pre>
+ * &#x40;WildFlyTest
+ * public class UserTest {
+ *     &#x40;Test
+ *     public void testGetUsers(&#x40;ServerResource &#x40;RequestPath("/api/users") URI usersUri) throws Exception {
+ *         HttpClient client = HttpClient.newHttpClient();
+ *         HttpRequest request = HttpRequest.newBuilder(usersUri).GET().build();
+ *         HttpResponse&lt;String&gt; response = client.send(request, HttpResponse.BodyHandlers.ofString());
+ *         Assertions.assertEquals(200, response.statusCode());
  *     }
  * }
  * </pre>
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
+ * @see ServerResource
  */
 @Inherited
 @Documented
@@ -43,8 +71,8 @@ import java.net.URI;
 public @interface RequestPath {
 
     /**
-     * The relative path the {@link jakarta.ws.rs.client.Client#target(URI)} should use based on the
-     * {@link SeBootstrap.Configuration#baseUriBuilder()} path.
+     * The relative path to append to the deployment's base URI. The path can start with or without a leading slash;
+     * the framework handles slash normalization automatically.
      *
      * @return the relative path
      */

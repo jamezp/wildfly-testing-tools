@@ -15,7 +15,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
-public class Support {
+class Support {
 
     /**
      * Resolves the servers base directory. This first uses the

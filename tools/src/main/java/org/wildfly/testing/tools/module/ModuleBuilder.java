@@ -31,7 +31,7 @@ import org.wildfly.testing.tools.xml.CloseableXMLStreamWriter;
  * This will create a JAR based on the classes and generate a module.xml file.
  * </p>
  *
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 @SuppressWarnings({ "unused", "UnusedReturnValue" })
 public class ModuleBuilder {
@@ -227,10 +227,10 @@ public class ModuleBuilder {
     }
 
     /**
-     * Creates a {@code META-INF/services} file for the interface with the implementations provied.
+     * Creates a {@code META-INF/services} file for the interface with the implementations provided.
      *
-     * @param intf            the interface to crate the services file for
-     * @param implementations the implemenations
+     * @param intf            the interface to create the services file for
+     * @param implementations the implementations
      *
      * @return this builder
      */
@@ -371,7 +371,6 @@ public class ModuleBuilder {
             if (Files.notExists(moduleDir)) {
                 Files.createDirectories(moduleDir);
             }
-            final Path fullPathToDelete = moduleDir.subpath(0, mp.getNameCount() + 1);
             createModule(moduleDir);
             return new ModuleDescription(name, mp, moduleDir);
         } catch (IOException e) {

@@ -12,5 +12,5 @@ import java.util.Set;
  *
  * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
-record DeploymentInfo(String deploymentName, Set<String> serverGroup) {
+record DeploymentInfo(String deploymentName, Set<String> serverGroups) {
 }

@@ -33,7 +33,7 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 // Used to run a single method last to ensure the modules directory is empty
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

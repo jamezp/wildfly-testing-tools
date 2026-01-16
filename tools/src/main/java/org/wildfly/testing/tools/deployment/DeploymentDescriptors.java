@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -45,7 +46,7 @@ import org.xml.sax.SAXException;
 /**
  * A utility to generate various deployment descriptors.
  *
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:jperkins@ibm.com">James R. Perkins</a>
  */
 @SuppressWarnings("unused")
 public class DeploymentDescriptors {
@@ -185,7 +186,7 @@ public class DeploymentDescriptors {
             writer.flush();
             return out.toByteArray();
         } catch (IOException | XMLStreamException e) {
-            throw new RuntimeException("Failed to create the jboss-deployment-structure.xml file.", e);
+            throw new RuntimeException("Failed to create the jboss-web.xml file.", e);
         }
     }
 
@@ -283,6 +284,7 @@ public class DeploymentDescriptors {
         final Set<PermissionDescription> allPermissions = new LinkedHashSet<>();
         try {
             final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             final DocumentBuilder builder = factory.newDocumentBuilder();
             try (InputStream in = currentPermissions.openStream()) {
                 final Document doc = builder.parse(in);
@@ -368,7 +370,9 @@ public class DeploymentDescriptors {
      */
     public static Collection<FilePermission> createTempDirPermission(final String actions) {
         String tempDir = System.getProperty("java.io.tmpdir");
-        // This should never happen, but it's a better error message than an NPE
+        if (tempDir == null) {
+            throw new IllegalStateException("System property 'java.io.tmpdir' is not set");
+        }
         if (tempDir.charAt(tempDir.length() - 1) != File.separatorChar) {
             tempDir += File.separatorChar;
         }
