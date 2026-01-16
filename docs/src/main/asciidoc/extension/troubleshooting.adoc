@@ -202,7 +202,6 @@ public class MyTest {
 **Solution:** Only specific types can be injected. Supported types:
 +
 * See the link:index.html#available-resources[Available Resources]
-* Custom types via `ServerResourceProducer` SPI
 
 == Module and Conditional Test Issues
 
